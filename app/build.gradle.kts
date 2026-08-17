@@ -4,17 +4,17 @@ plugins {
 }
 
 android {
-    namespace = "com.example.viteats"
+    namespace = "com.viteats.app"
     compileSdk {
-        version = release(36) {
+        version = release(37) {
             minorApiLevel = 1
         }
     }
 
     defaultConfig {
-        applicationId = "com.example.viteats"
+        applicationId = "com.viteats.app"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "1.0"
 

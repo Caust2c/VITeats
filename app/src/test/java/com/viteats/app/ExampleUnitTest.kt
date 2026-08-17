@@ -1,4 +1,4 @@
-package com.example.viteats
+package com.viteats.app
 
 import org.junit.Test
 

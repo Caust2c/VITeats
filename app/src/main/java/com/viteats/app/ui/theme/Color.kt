@@ -1,4 +1,4 @@
-package com.example.viteats.ui.theme
+package com.viteats.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
