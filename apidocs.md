@@ -6,6 +6,8 @@
 >
 > **Security:** Never commit real OTPs, session cookies, Cloudflare cookies, credentials, payment references, or unnecessary personal data.
 
+## Note: This document was AI-generated and contains additional instructions for AI agents (rules and such). It is still valid documentation and should be used as a reference when working with the Proodle API.
+
 ## Base URL
 
 ```text
