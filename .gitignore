@@ -9,3 +9,7 @@
 .cxx
 local.properties
 CLAUDE.md
+
+# VITeats Specific
+*.har
+apidocs.md

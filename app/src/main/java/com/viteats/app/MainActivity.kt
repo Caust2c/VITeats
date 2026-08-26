@@ -4,13 +4,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.compose.rememberNavController
+import com.viteats.app.ui.navigation.NavGraph
+import com.viteats.app.ui.navigation.Screen
 import com.viteats.app.ui.theme.VITeatsTheme
 
 class MainActivity : ComponentActivity() {
@@ -19,28 +16,17 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             VITeatsTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                val navController = rememberNavController()
+                val application = LocalContext.current.applicationContext as VITeatsApplication
+                
+                val startDestination = if (application.authRepository.isLoggedIn()) {
+                    Screen.Home.route
+                } else {
+                    Screen.Login.route
                 }
+
+                NavGraph(navController = navController, startDestination = startDestination)
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(modifier: Modifier = Modifier) {
-    Text(
-        text = "Welcome to VITeats!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    VITeatsTheme {
-        Greeting()
     }
 }
