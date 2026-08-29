@@ -23,15 +23,10 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
             _authState.value = AuthState.Loading
             try {
                 val response = repository.login(appNumber, pin)
-                if (response.isSuccessful && response.body()?.isNotEmpty() == true) {
-                    val otpSts = response.body()!![0].otpSts
-                    if (otpSts.startsWith("duplicate") || otpSts.isNotBlank()) {
-                        _authState.value = AuthState.Success
-                    } else {
-                        _authState.value = AuthState.Error("Invalid credentials")
-                    }
+                if (response.isSuccessful) {
+                    _authState.value = AuthState.Success
                 } else {
-                    _authState.value = AuthState.Error("Login failed: ${response.message()}")
+                    _authState.value = AuthState.Error("Invalid PIN or Login failed")
                 }
             } catch (e: Exception) {
                 _authState.value = AuthState.Error(e.message ?: "Unknown error")

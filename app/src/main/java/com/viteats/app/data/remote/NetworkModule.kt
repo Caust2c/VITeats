@@ -14,15 +14,17 @@ object NetworkModule {
     private const val BASE_URL = "https://vit-proodle.expertsoftsys.com/api/"
 
     private class SimpleCookieJar : CookieJar {
-        private val cookieStore = mutableListOf<Cookie>()
+        private val cookieStore = mutableMapOf<String, Cookie>()
 
         override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
-            cookieStore.addAll(cookies)
+            for (cookie in cookies) {
+                val key = "${cookie.domain}|${cookie.path}|${cookie.name}"
+                cookieStore[key] = cookie
+            }
         }
 
         override fun loadForRequest(url: HttpUrl): List<Cookie> {
-            val validCookies = cookieStore.filter { it.matches(url) }
-            return validCookies
+            return cookieStore.values.filter { it.matches(url) }
         }
     }
 

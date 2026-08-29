@@ -21,7 +21,7 @@ class VITeatsApplication : Application() {
         sessionManager = SessionManager(this)
         authRepository = AuthRepository(api, sessionManager)
         studentRepository = StudentRepository(api, sessionManager)
-        menuRepository = MenuRepository(api)
+        menuRepository = MenuRepository(api, sessionManager)
         orderRepository = OrderRepository(api, sessionManager)
     }
 }

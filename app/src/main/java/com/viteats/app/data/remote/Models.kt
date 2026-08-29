@@ -58,6 +58,8 @@ data class MenuItem(
     val skudes: String,
     val StockQty: Int,
     val icat: Int,
+    val StartTime: String?,
+    val EndTime: String?,
     // Helper to get image URL
     val imageUrl: String = "https://vit-proodle.expertsoftsys.com/images/$meitid.jpg"
 )
@@ -75,7 +77,5 @@ data class Order(
     val RegNo: String,
     val studname: String
 )
-
-// The response for orderQR is still fuzzy, but apidocs says it can be Base64
-// We'll treat it as a string for now.
+//String response stored for QR and then base64 decode to image (tested and works)
 typealias OrderQRResponse = String
