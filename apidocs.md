@@ -118,7 +118,7 @@ Fetch student wallet/account information.
 
 ## 3.1 getprefers
 
-**Method:** `GET`
+**Method:** `POST`
 
 **Endpoint:** `/api/getprefers`
 
@@ -151,7 +151,7 @@ Fetch available meal categories/preferences.
 
 ## 4.1 getmenugroup
 
-**Method:** `GET`
+**Method:** `POST`
 
 **Endpoint:** `/api/getmenugroup`
 
@@ -174,7 +174,7 @@ Fetch food classification groups.
 
 ## 4.2 Getcatlistnew
 
-**Method:** `GET`
+**Method:** `POST`
 
 **Endpoint:** `/api/Getcatlistnew`
 
@@ -213,7 +213,7 @@ Observed outlets: `DESIR`, `TAWAZ`, `GO GRILL`, `FRUITERIA`.
 
 ## 5.1 GetOptionMenuItems
 
-**Method:** `GET`
+**Method:** `POST`
 
 **Endpoint:** `/api/GetOptionMenuItems`
 
@@ -337,7 +337,7 @@ Exact calculation behavior is unknown.
 
 ## 7.1 chkuserstat
 
-**Method:** `GET`
+**Method:** `POST`
 
 **Endpoint:** `/api/chkuserstat`
 
@@ -366,7 +366,7 @@ Likely checks current user/session status.
 
 ## 8.1 GetOrderIdDetails
 
-**Method:** `GET`
+**Method:** `POST`
 
 **Endpoint:** `/api/GetOrderIdDetails`
 
@@ -620,7 +620,7 @@ Exact response schema still needs to be documented.
 
 ## 12.1 getoffers
 
-**Method:** `GET`
+**Method:** `POST`
 
 **Endpoint:** `/api/getoffers`
 
@@ -737,22 +737,22 @@ GetOrderList
 # 14. API Inventory
 
 | Endpoint | Method | Purpose | Status |
-|---|---|---|---|
-| `/GetOTPChecking` | POST | Authentication | Partially understood |
-| `/getstudWBalinfo` | GET | Student/wallet info | Understood |
-| `/getprefers` | GET | Meal preferences | Partially understood |
-| `/getmenugroup` | GET | Food groups | Understood |
-| `/Getcatlistnew` | GET | Food outlets/categories | Understood |
-| `/GetOptionMenuItems` | GET | Menu items | Mostly understood |
-| `/getqoh` | GET | Product stock | Understood |
-| `/getexgstval` | GET | GST/tax-related value | Partially understood |
-| `/chkuserstat` | GET | User/session status | Unknown |
-| `/GetOrderIdDetails` | GET | Order number | Partially understood |
-| `/GetOutletListInsert` | POST | Build/submit order | Mostly understood |
-| `/OnlineWPayment` | POST | Payment | Partially understood |
-| `/GetOrderList` | GET | Order history | Understood |
-| `/orderQR` | GET | Order QR | Mostly understood |
-| `/getoffers` | GET | Offers/discounts | Unknown |
+|---|--------|---|---|
+| `/GetOTPChecking` | POST   | Authentication | Partially understood |
+| `/getstudWBalinfo` | GET    | Student/wallet info | Understood |
+| `/getprefers` | POST   | Meal preferences | Partially understood |
+| `/getmenugroup` | POST   | Food groups | Understood |
+| `/Getcatlistnew` | POST   | Food outlets/categories | Understood |
+| `/GetOptionMenuItems` | POST   | Menu items | Mostly understood |
+| `/getqoh` | GET    | Product stock | Understood |
+| `/getexgstval` | GET    | GST/tax-related value | Partially understood |
+| `/chkuserstat` | POST   | User/session status | Unknown |
+| `/GetOrderIdDetails` | POST   | Order number | Partially understood |
+| `/GetOutletListInsert` | POST   | Build/submit order | Mostly understood |
+| `/OnlineWPayment` | POST   | Payment | Partially understood |
+| `/GetOrderList` | GET    | Order history | Understood |
+| `/orderQR` | GET    | Order QR | Mostly understood |
+| `/getoffers` | POST   | Offers/discounts | Unknown |
 
 ---
 
