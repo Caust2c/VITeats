@@ -12,4 +12,5 @@ CLAUDE.md
 
 # VITeats Specific
 *.har
-apidocs.md
+.artifacts/
+.kotlin/
