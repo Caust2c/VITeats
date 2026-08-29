@@ -1,0 +1,46 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- VIT (First Line) -->
+    <group
+        android:translateX="34"
+        android:translateY="35">
+        <!-- V -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M0,0 L5,15 L10,0 H14 L7,20 H3 L0,0 Z" />
+        <!-- I -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M17,0 H21 V20 H17 Z" />
+        <!-- T -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M24,0 H36 V4 H32 V20 H28 V4 H24 Z" />
+    </group>
+
+    <!-- Eats (Second Line) -->
+    <group
+        android:translateX="31"
+        android:translateY="62">
+        <!-- E -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M0,0 H10 V3 H4 V6 H9 V9 H4 V12 H10 V15 H0 Z" />
+        <!-- a -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M13,5 H21 V15 H18 V13 Q16,15 13,15 Q11,15 11,12 V10 H14 V12 Q14,13 16,13 Q18,13 18,11 V8 H13 Z" />
+        <!-- t -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M24,0 H27 V5 H30 V8 H27 V15 H24 V8 H22 V5 H24 Z" />
+        <!-- s -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M33,12 H37 Q37,13 36,14 Q35,15 33,15 Q31,15 31,12 L33,12 Q33,13 34,13 Q35,13 35,12 Q35,11 31,11 V8 Q31,5 33,5 Q35,5 37,8 L35,8 Q35,7 34,7 Q33,7 33,8 Q33,9 37,9 V12 Z" />
+    </group>
+</vector>
