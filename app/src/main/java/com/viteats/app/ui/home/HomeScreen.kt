@@ -21,6 +21,11 @@ import com.viteats.app.ui.orders.OrdersScreen
 import com.viteats.app.ui.orders.OrdersViewModel
 import com.viteats.app.ui.student.StudentScreen
 import com.viteats.app.ui.student.StudentViewModel
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.viteats.app.ui.theme.*
 import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -47,39 +52,65 @@ fun HomeScreen(
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("VITeats") },
-                actions = {
-                    IconButton(onClick = {
-                        authViewModel.logout()
-                        onLogout()
-                    }) {
-                        Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Logout")
-                    }
-                }
-            )
-        },
+        containerColor = LavenderBackground,
         bottomBar = {
-            NavigationBar {
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
-                    label = { Text("Home") },
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 }
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.RestaurantMenu, contentDescription = "Menu") },
-                    label = { Text("Menu") },
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 }
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.History, contentDescription = "Orders") },
-                    label = { Text("Orders") },
-                    selected = selectedTab == 2,
-                    onClick = { selectedTab = 2 }
-                )
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .drawBehind {
+                        drawLine(
+                            color = NeobrutalBlack,
+                            start = Offset(0f, 0f),
+                            end = Offset(size.width, 0f),
+                            strokeWidth = 4f
+                        )
+                    },
+                color = NeobrutalWhite
+            ) {
+                NavigationBar(
+                    containerColor = NeobrutalWhite,
+                    tonalElevation = 0.dp
+                ) {
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Default.Home, contentDescription = "Home", modifier = Modifier.size(24.dp)) },
+                        label = { Text("Home", fontWeight = if (selectedTab == 0) FontWeight.Black else FontWeight.Bold) },
+                        selected = selectedTab == 0,
+                        onClick = { selectedTab = 0 },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = NeobrutalBlack,
+                            selectedTextColor = NeobrutalBlack,
+                            indicatorColor = MintGreen,
+                            unselectedIconColor = NeobrutalBlack.copy(alpha = 0.7f),
+                            unselectedTextColor = NeobrutalBlack.copy(alpha = 0.7f)
+                        )
+                    )
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Default.RestaurantMenu, contentDescription = "Menu", modifier = Modifier.size(24.dp)) },
+                        label = { Text("Menu", fontWeight = if (selectedTab == 1) FontWeight.Black else FontWeight.Bold) },
+                        selected = selectedTab == 1,
+                        onClick = { selectedTab = 1 },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = NeobrutalBlack,
+                            selectedTextColor = NeobrutalBlack,
+                            indicatorColor = PastelYellow,
+                            unselectedIconColor = NeobrutalBlack.copy(alpha = 0.7f),
+                            unselectedTextColor = NeobrutalBlack.copy(alpha = 0.7f)
+                        )
+                    )
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Default.History, contentDescription = "Orders", modifier = Modifier.size(24.dp)) },
+                        label = { Text("Orders", fontWeight = if (selectedTab == 2) FontWeight.Black else FontWeight.Bold) },
+                        selected = selectedTab == 2,
+                        onClick = { selectedTab = 2 },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = NeobrutalBlack,
+                            selectedTextColor = NeobrutalBlack,
+                            indicatorColor = SoftCoral,
+                            unselectedIconColor = NeobrutalBlack.copy(alpha = 0.7f),
+                            unselectedTextColor = NeobrutalBlack.copy(alpha = 0.7f)
+                        )
+                    )
+                }
             }
         }
     ) { innerPadding ->

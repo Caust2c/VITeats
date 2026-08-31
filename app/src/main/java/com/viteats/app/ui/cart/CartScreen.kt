@@ -1,6 +1,8 @@
 package com.viteats.app.ui.cart
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,6 +16,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -21,9 +25,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.viteats.app.VITeatsApplication
 import com.viteats.app.data.model.CartItem
+import com.viteats.app.ui.components.NeobrutalButton
+import com.viteats.app.ui.components.NeobrutalCard
+import com.viteats.app.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,72 +61,112 @@ fun CartScreen(
     }
 
     Scaffold(
+        containerColor = LavenderBackground,
         topBar = {
-            TopAppBar(
-                title = { Text("Cart Summary") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    if (cartItems.isNotEmpty()) {
-                        IconButton(onClick = { viewModel.clearCart() }) {
-                            Icon(Icons.Default.DeleteSweep, contentDescription = "Clear cart")
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .drawBehind {
+                        drawLine(
+                            color = NeobrutalBlack,
+                            start = Offset(0f, size.height),
+                            end = Offset(size.width, size.height),
+                            strokeWidth = 3f
+                        )
+                    },
+                color = NeobrutalWhite
+            ) {
+                TopAppBar(
+                    title = {
+                        Text(
+                            "My Cart",
+                            fontWeight = FontWeight.Black,
+                            color = NeobrutalBlack
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                tint = NeobrutalBlack
+                            )
                         }
-                    }
-                }
-            )
+                    },
+                    actions = {
+                        if (cartItems.isNotEmpty()) {
+                            IconButton(onClick = { viewModel.clearCart() }) {
+                                Icon(
+                                    Icons.Default.DeleteSweep,
+                                    contentDescription = "Clear cart",
+                                    tint = NeobrutalBlack
+                                )
+                            }
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = NeobrutalWhite)
+                )
+            }
         },
         bottomBar = {
             if (cartItems.isNotEmpty()) {
                 Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shadowElevation = 8.dp,
-                    color = MaterialTheme.colorScheme.surface
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .drawBehind {
+                            drawLine(
+                                color = NeobrutalBlack,
+                                start = Offset(0f, 0f),
+                                end = Offset(size.width, 0f),
+                                strokeWidth = 3f
+                            )
+                        },
+                    color = NeobrutalWhite
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text(
-                                    text = "Total Payable",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = "₹${"%.2f".format(totalAmount)}",
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
+                    Row(
+                        modifier = Modifier
+                            .padding(horizontal = 20.dp, vertical = 14.dp)
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "Total Payable",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MutedText
+                            )
+                            Text(
+                                text = "₹${"%.2f".format(totalAmount)}",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Black,
+                                color = NeobrutalBlack
+                            )
+                        }
 
-                            Button(
-                                onClick = {
-                                    enteredPin = app.sessionManager.cachedPin ?: ""
-                                    showPinDialog = true
-                                },
-                                modifier = Modifier
-                                    .height(48.dp)
-                                    .padding(start = 16.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                enabled = checkoutState !is CheckoutState.Processing
-                            ) {
-                                if (checkoutState is CheckoutState.Processing) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(20.dp),
-                                        color = MaterialTheme.colorScheme.onPrimary,
-                                        strokeWidth = 2.dp
-                                    )
-                                } else {
-                                    Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(18.dp))
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Pay & Place Order", fontWeight = FontWeight.Bold)
-                                }
+                        NeobrutalButton(
+                            onClick = {
+                                enteredPin = app.sessionManager.cachedPin ?: ""
+                                showPinDialog = true
+                            },
+                            backgroundColor = MintGreen,
+                            contentColor = NeobrutalBlack,
+                            shadowOffset = 3.dp,
+                            cornerRadius = 14.dp,
+                            enabled = checkoutState !is CheckoutState.Processing,
+                            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp)
+                        ) {
+                            if (checkoutState is CheckoutState.Processing) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(18.dp),
+                                    color = NeobrutalBlack,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(18.dp), tint = NeobrutalBlack)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Pay & Order", fontWeight = FontWeight.Black)
                             }
                         }
                     }
@@ -131,13 +179,12 @@ fun CartScreen(
                 .padding(innerPadding)
                 .fillMaxSize()
         ) {
-            // Checkout Error Banner
+            // Error Banner
             if (checkoutState is CheckoutState.Error) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                NeobrutalCard(
+                    backgroundColor = SoftCoral,
+                    shadowOffset = 4.dp,
+                    modifier = Modifier.padding(16.dp)
                 ) {
                     Row(
                         modifier = Modifier.padding(16.dp),
@@ -146,13 +193,14 @@ fun CartScreen(
                         Icon(
                             Icons.Default.ErrorOutline,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error
+                            tint = NeobrutalBlack
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
                             text = (checkoutState as CheckoutState.Error).message,
-                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            color = NeobrutalBlack,
                             style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -166,28 +214,40 @@ fun CartScreen(
                         .padding(32.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            Icons.Default.ShoppingCart,
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Your Cart is Empty",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Explore the mess menu and add delicious items.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Button(onClick = onBack) {
-                            Text("Browse Menu")
+                    NeobrutalCard(
+                        backgroundColor = NeobrutalWhite,
+                        shadowOffset = 5.dp
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(28.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                Icons.Default.ShoppingCart,
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp),
+                                tint = NeobrutalBlack
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "Your Cart is Empty",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Black,
+                                color = NeobrutalBlack
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = "Explore the mess menu to add items.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MutedText
+                            )
+                            Spacer(modifier = Modifier.height(20.dp))
+                            NeobrutalButton(
+                                onClick = onBack,
+                                backgroundColor = PastelYellow
+                            ) {
+                                Text("Browse Menu", fontWeight = FontWeight.Black)
+                            }
                         }
                     }
                 }
@@ -195,62 +255,161 @@ fun CartScreen(
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     item {
                         Text(
-                            text = "Order Items ($totalCount)",
+                            text = "Items in Cart ($totalCount)",
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Black,
+                            color = NeobrutalBlack
                         )
                     }
 
                     items(cartItems, key = { it.item.meitid }) { cartItem ->
-                        CartItemRow(
-                            cartItem = cartItem,
-                            onIncrement = { viewModel.addItem(cartItem.item) },
-                            onDecrement = { viewModel.decrementItem(cartItem.item) },
-                            onRemove = { viewModel.removeItem(cartItem.item) }
-                        )
+                        NeobrutalCard(
+                            backgroundColor = NeobrutalWhite,
+                            shadowOffset = 3.dp,
+                            cornerRadius = 14.dp
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .padding(12.dp)
+                                    .fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(68.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(LavenderBackground)
+                                        .border(BorderStroke(2.dp, NeobrutalBlack), RoundedCornerShape(10.dp))
+                                ) {
+                                    AsyncImage(
+                                        model = cartItem.item.imageUrl,
+                                        contentDescription = cartItem.item.meitdes,
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(12.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = cartItem.item.meitdes,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Black,
+                                        maxLines = 1,
+                                        color = NeobrutalBlack
+                                    )
+                                    Text(
+                                        text = "₹${"%.2f".format(cartItem.item.retrt)} each",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MutedText
+                                    )
+                                    Text(
+                                        text = "₹${"%.2f".format(cartItem.lineTotal)}",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Black,
+                                        color = NeobrutalBlack
+                                    )
+                                }
+
+                                // Stepper
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(MintGreen)
+                                        .border(BorderStroke(1.5.dp, NeobrutalBlack), RoundedCornerShape(8.dp))
+                                        .padding(horizontal = 2.dp, vertical = 2.dp)
+                                ) {
+                                    IconButton(
+                                        onClick = { viewModel.decrementItem(cartItem.item) },
+                                        modifier = Modifier.size(26.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = if (cartItem.quantity == 1) Icons.Default.Delete else Icons.Default.Remove,
+                                            contentDescription = "Decrease",
+                                            modifier = Modifier.size(14.dp),
+                                            tint = NeobrutalBlack
+                                        )
+                                    }
+
+                                    Text(
+                                        text = "${cartItem.quantity}",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Black,
+                                        color = NeobrutalBlack,
+                                        modifier = Modifier.padding(horizontal = 6.dp)
+                                    )
+
+                                    IconButton(
+                                        onClick = { viewModel.addItem(cartItem.item) },
+                                        modifier = Modifier.size(26.dp),
+                                        enabled = cartItem.quantity < cartItem.item.StockQty
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Add,
+                                            contentDescription = "Increase",
+                                            modifier = Modifier.size(14.dp),
+                                            tint = NeobrutalBlack
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     item {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        // Bill Breakdown Neobrutal Card
+                        NeobrutalCard(
+                            backgroundColor = PastelYellow,
+                            borderColor = NeobrutalBlack,
+                            borderWidth = 2.5.dp,
+                            shadowOffset = 4.dp,
+                            cornerRadius = 16.dp
                         ) {
-                            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Column(
+                                modifier = Modifier.padding(18.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
                                 Text(
                                     text = "Bill Breakdown",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Black,
+                                    color = NeobrutalBlack
                                 )
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Items Subtotal", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text("₹${"%.2f".format(totalAmount)}")
+                                    Text("Items Subtotal", color = NeobrutalBlack, fontWeight = FontWeight.Medium)
+                                    Text("₹${"%.2f".format(totalAmount)}", fontWeight = FontWeight.Bold, color = NeobrutalBlack)
                                 }
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Mess / Platform Fee", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text("₹0.00", color = Color(0xFF16A34A), fontWeight = FontWeight.Bold)
+                                    Text("Mess / Platform Fee", color = NeobrutalBlack, fontWeight = FontWeight.Medium)
+                                    Text("FREE", color = Color(0xFF15803D), fontWeight = FontWeight.Black)
                                 }
-                                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(vertical = 4.dp),
+                                    color = NeobrutalBlack.copy(alpha = 0.2f)
+                                )
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Total Amount", fontWeight = FontWeight.Bold)
+                                    Text("Total Amount", fontWeight = FontWeight.Black, color = NeobrutalBlack)
                                     Text(
                                         "₹${"%.2f".format(totalAmount)}",
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = MaterialTheme.colorScheme.primary
+                                        fontWeight = FontWeight.Black,
+                                        style = MaterialTheme.typography.titleLarge,
+                                        color = NeobrutalBlack
                                     )
                                 }
                             }
@@ -261,7 +420,7 @@ fun CartScreen(
         }
     }
 
-    // PIN Confirmation Modal
+    // PIN Confirmation Dialog
     if (showPinDialog) {
         AlertDialog(
             onDismissRequest = {
@@ -272,8 +431,9 @@ fun CartScreen(
             title = {
                 Text(
                     text = "Confirm Mess PIN",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Black,
+                    color = NeobrutalBlack
                 )
             },
             text = {
@@ -281,7 +441,7 @@ fun CartScreen(
                     Text(
                         text = "Enter your Proodle PIN to authorize payment of ₹${"%.2f".format(totalAmount)} from your wallet.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MutedText
                     )
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -302,15 +462,16 @@ fun CartScreen(
                     if (pinError != null) {
                         Text(
                             text = pinError!!,
-                            color = MaterialTheme.colorScheme.error,
+                            color = Color.Red,
                             style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(top = 4.dp)
                         )
                     }
                 }
             },
             confirmButton = {
-                Button(
+                NeobrutalButton(
                     onClick = {
                         if (enteredPin.isBlank()) {
                             pinError = "Please enter your PIN"
@@ -319,9 +480,10 @@ fun CartScreen(
                             viewModel.checkout(enteredPin)
                         }
                     },
+                    backgroundColor = MintGreen,
                     enabled = checkoutState !is CheckoutState.Processing
                 ) {
-                    Text("Authorize & Pay")
+                    Text("Authorize & Pay", fontWeight = FontWeight.Black)
                 }
             },
             dismissButton = {
@@ -329,109 +491,10 @@ fun CartScreen(
                     onClick = { showPinDialog = false },
                     enabled = checkoutState !is CheckoutState.Processing
                 ) {
-                    Text("Cancel")
+                    Text("Cancel", fontWeight = FontWeight.Bold, color = NeobrutalBlack)
                 }
             }
         )
     }
 }
 
-@Composable
-fun CartItemRow(
-    cartItem: CartItem,
-    onIncrement: () -> Unit,
-    onDecrement: () -> Unit,
-    onRemove: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(12.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(70.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                AsyncImage(
-                    model = cartItem.item.imageUrl,
-                    contentDescription = cartItem.item.meitdes,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = cartItem.item.meitdes,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1
-                )
-                Text(
-                    text = "₹${"%.2f".format(cartItem.item.retrt)} each",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "₹${"%.2f".format(cartItem.lineTotal)}",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            // Stepper
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colorScheme.primaryContainer)
-                    .padding(horizontal = 2.dp, vertical = 2.dp)
-            ) {
-                IconButton(
-                    onClick = onDecrement,
-                    modifier = Modifier.size(28.dp)
-                ) {
-                    Icon(
-                        imageVector = if (cartItem.quantity == 1) Icons.Default.Delete else Icons.Default.Remove,
-                        contentDescription = "Decrease",
-                        modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
-
-                Text(
-                    text = "${cartItem.quantity}",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.padding(horizontal = 6.dp)
-                )
-
-                IconButton(
-                    onClick = onIncrement,
-                    modifier = Modifier.size(28.dp),
-                    enabled = cartItem.quantity < cartItem.item.StockQty
-                ) {
-                    Icon(
-                        Icons.Default.Add,
-                        contentDescription = "Increase",
-                        modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
-            }
-        }
-    }
-}

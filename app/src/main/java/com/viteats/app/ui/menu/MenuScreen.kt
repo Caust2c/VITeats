@@ -3,14 +3,16 @@ package com.viteats.app.ui.menu
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
@@ -25,8 +27,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.viteats.app.data.remote.MenuItem
+import com.viteats.app.ui.components.NeobrutalButton
+import com.viteats.app.ui.components.NeobrutalCard
+import com.viteats.app.ui.components.NeobrutalPill
+import com.viteats.app.ui.theme.*
 
 @Composable
 fun MenuScreen(
@@ -41,32 +48,78 @@ fun MenuScreen(
     val totalCartCount = remember(cartItems) { cartItems.sumOf { it.quantity } }
     val totalCartAmount = remember(cartItems) { cartItems.sumOf { it.lineTotal } }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(LavenderBackground)
+    ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // Search Bar
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { viewModel.onSearchQueryChanged(it) },
-                placeholder = { Text("Search dishes, combos, outlets...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { viewModel.onSearchQueryChanged("") }) {
-                            Icon(Icons.Default.Clear, contentDescription = "Clear search")
-                        }
-                    }
-                },
+            // Neobrutal Search Bar
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true
-            )
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                NeobrutalCard(
+                    backgroundColor = NeobrutalWhite,
+                    borderColor = NeobrutalBlack,
+                    borderWidth = 2.dp,
+                    shadowOffset = 3.dp,
+                    cornerRadius = 14.dp
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .padding(horizontal = 14.dp, vertical = 10.dp)
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Search",
+                            tint = NeobrutalBlack,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Box(modifier = Modifier.weight(1f)) {
+                            if (searchQuery.isEmpty()) {
+                                Text(
+                                    text = "Search dishes, combos, outlets...",
+                                    color = MutedText,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                            BasicTextField(
+                                value = searchQuery,
+                                onValueChange = { viewModel.onSearchQueryChanged(it) },
+                                singleLine = true,
+                                textStyle = MaterialTheme.typography.bodyMedium.copy(
+                                    color = NeobrutalBlack,
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(
+                                onClick = { viewModel.onSearchQueryChanged("") },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Clear,
+                                    contentDescription = "Clear",
+                                    tint = NeobrutalBlack,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
 
             when (val state = menuState) {
                 is MenuState.Loading -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
+                        CircularProgressIndicator(color = NeobrutalBlack)
                     }
                 }
                 is MenuState.Success -> {
@@ -75,15 +128,17 @@ fun MenuScreen(
                     }
 
                     LazyRow(
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(categories) { category ->
-                            FilterChip(
-                                selected = selectedCategory == category,
-                                onClick = { viewModel.onCategorySelected(category) },
-                                label = { Text(category) },
-                                shape = RoundedCornerShape(8.dp)
+                            val isSelected = selectedCategory == category
+                            NeobrutalPill(
+                                text = category,
+                                backgroundColor = if (isSelected) MintGreen else NeobrutalWhite,
+                                textColor = NeobrutalBlack,
+                                isSelected = isSelected,
+                                onClick = { viewModel.onCategorySelected(category) }
                             )
                         }
                     }
@@ -106,20 +161,29 @@ fun MenuScreen(
                                 .padding(32.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(
-                                    imageVector = Icons.Default.SearchOff,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(48.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                                )
-                                Spacer(modifier = Modifier.height(12.dp))
-                                Text(
-                                    text = if (searchQuery.isNotBlank()) "No items found matching \"$searchQuery\""
-                                    else "No items in this category",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                            NeobrutalCard(
+                                backgroundColor = NeobrutalWhite,
+                                shadowOffset = 4.dp
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(24.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.SearchOff,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(48.dp),
+                                        tint = NeobrutalBlack
+                                    )
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    Text(
+                                        text = if (searchQuery.isNotBlank()) "No items found matching \"$searchQuery\""
+                                        else "No items in this category",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = NeobrutalBlack
+                                    )
+                                }
                             }
                         }
                     } else {
@@ -129,9 +193,9 @@ fun MenuScreen(
                                 start = 16.dp,
                                 end = 16.dp,
                                 top = 8.dp,
-                                bottom = if (totalCartCount > 0) 88.dp else 16.dp
+                                bottom = if (totalCartCount > 0) 96.dp else 24.dp
                             ),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            verticalArrangement = Arrangement.spacedBy(14.dp)
                         ) {
                             items(filteredItems, key = { it.meitid }) { item ->
                                 val inCartQty = cartItems.find { it.item.meitid == item.meitid }?.quantity ?: 0
@@ -147,18 +211,28 @@ fun MenuScreen(
                 }
                 is MenuState.Error -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
+                        NeobrutalCard(
+                            backgroundColor = SoftCoral,
+                            shadowOffset = 4.dp,
                             modifier = Modifier.padding(24.dp)
                         ) {
-                            Text(
-                                text = state.message,
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Button(onClick = { viewModel.fetchMenu() }) {
-                                Text("Retry")
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.padding(24.dp)
+                            ) {
+                                Text(
+                                    text = state.message,
+                                    color = NeobrutalBlack,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                NeobrutalButton(
+                                    onClick = { viewModel.fetchMenu() },
+                                    backgroundColor = NeobrutalWhite
+                                ) {
+                                    Text("Retry", fontWeight = FontWeight.Bold)
+                                }
                             }
                         }
                     }
@@ -166,7 +240,7 @@ fun MenuScreen(
             }
         }
 
-        // --- Floating Cart Bar ---
+        // --- Floating Neobrutal Cart Bar ---
         AnimatedVisibility(
             visible = totalCartCount > 0,
             modifier = Modifier
@@ -175,13 +249,13 @@ fun MenuScreen(
             enter = slideInVertically(initialOffsetY = { it }),
             exit = slideOutVertically(targetOffsetY = { it })
         ) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onNavigateToCart() },
-                shape = RoundedCornerShape(16.dp),
-                color = MaterialTheme.colorScheme.primary,
-                shadowElevation = 6.dp
+            NeobrutalCard(
+                backgroundColor = PastelYellow,
+                borderColor = NeobrutalBlack,
+                borderWidth = 2.5.dp,
+                shadowOffset = 5.dp,
+                cornerRadius = 18.dp,
+                onClick = onNavigateToCart
             ) {
                 Row(
                     modifier = Modifier
@@ -194,28 +268,37 @@ fun MenuScreen(
                         Text(
                             text = "$totalCartCount item${if (totalCartCount > 1) "s" else ""} added",
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
+                            fontWeight = FontWeight.Bold,
+                            color = NeobrutalBlack
                         )
                         Text(
                             text = "₹${"%.2f".format(totalCartAmount)}",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimary
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Black,
+                            color = NeobrutalBlack
                         )
                     }
 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MintGreen)
+                            .border(BorderStroke(2.dp, NeobrutalBlack), RoundedCornerShape(12.dp))
+                            .padding(horizontal = 14.dp, vertical = 8.dp)
+                    ) {
                         Text(
                             text = "View Cart",
                             style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimary
+                            fontWeight = FontWeight.Black,
+                            color = NeobrutalBlack
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowForward,
                             contentDescription = "Cart",
-                            tint = MaterialTheme.colorScheme.onPrimary
+                            tint = NeobrutalBlack,
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
@@ -233,24 +316,26 @@ fun MenuItemCard(
 ) {
     val isOutOfStock = item.StockQty <= 0
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .alpha(if (isOutOfStock) 0.65f else 1.0f),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    NeobrutalCard(
+        backgroundColor = if (isOutOfStock) NeobrutalWhite.copy(alpha = 0.8f) else NeobrutalWhite,
+        borderColor = NeobrutalBlack,
+        borderWidth = 2.dp,
+        shadowOffset = if (isOutOfStock) 2.dp else 4.dp,
+        cornerRadius = 16.dp
     ) {
         Row(
             modifier = Modifier
                 .padding(12.dp)
                 .fillMaxWidth()
+                .alpha(if (isOutOfStock) 0.65f else 1.0f)
         ) {
             // Food Image with status overlay
             Box(
                 modifier = Modifier
-                    .size(105.dp)
+                    .size(96.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .background(LavenderBackground)
+                    .border(BorderStroke(2.dp, NeobrutalBlack), RoundedCornerShape(12.dp))
             ) {
                 AsyncImage(
                     model = item.imageUrl,
@@ -260,17 +345,19 @@ fun MenuItemCard(
                 )
 
                 if (isOutOfStock) {
-                    Surface(
-                        modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
-                        color = Color.Black.copy(alpha = 0.7f)
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .background(Color.Black.copy(alpha = 0.8f))
+                            .padding(vertical = 2.dp),
+                        contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "OUT OF STOCK",
+                            text = "SOLD OUT",
                             color = Color.White,
                             style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(vertical = 2.dp),
-                            maxLines = 1
+                            fontWeight = FontWeight.Black
                         )
                     }
                 }
@@ -281,47 +368,44 @@ fun MenuItemCard(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .heightIn(min = 105.dp),
+                    .heightIn(min = 96.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Top
-                    ) {
-                        Text(
-                            text = item.meitdes,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
+                    Text(
+                        text = item.meitdes,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Black,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        color = NeobrutalBlack
+                    )
 
                     Spacer(modifier = Modifier.height(2.dp))
 
                     Text(
                         text = "${item.dispname} · ${item.skudes}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        fontWeight = FontWeight.Medium,
+                        color = MutedText
                     )
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(top = 2.dp)
+                        modifier = Modifier.padding(top = 4.dp)
                     ) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.secondaryContainer,
-                            shape = RoundedCornerShape(4.dp)
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(SoftCyan)
+                                .border(BorderStroke(1.dp, NeobrutalBlack), RoundedCornerShape(6.dp))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
                             Text(
                                 text = item.odtdes,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                fontWeight = FontWeight.Medium
+                                color = NeobrutalBlack,
+                                fontWeight = FontWeight.Bold
                             )
                         }
 
@@ -330,8 +414,8 @@ fun MenuItemCard(
                             Text(
                                 text = "Only ${item.StockQty} left",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = Color(0xFFD97706),
-                                fontWeight = FontWeight.Bold
+                                color = Color(0xFFC2410C),
+                                fontWeight = FontWeight.Black
                             )
                         }
                     }
@@ -340,80 +424,77 @@ fun MenuItemCard(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 8.dp),
+                        .padding(top = 6.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = "₹${"%.2f".format(item.retrt)}",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.primary
+                        fontWeight = FontWeight.Black,
+                        color = NeobrutalBlack
                     )
 
-                    // Cart Stepper or Add Button
                     if (isOutOfStock) {
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant
-                        ) {
-                            Text(
-                                text = "Unavailable",
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        Text(
+                            text = "Unavailable",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MutedText
+                        )
                     } else if (quantityInCart == 0) {
-                        Button(
+                        NeobrutalButton(
                             onClick = onAddToCart,
-                            shape = RoundedCornerShape(8.dp),
-                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
-                            modifier = Modifier.height(36.dp)
+                            backgroundColor = PastelYellow,
+                            borderWidth = 1.5.dp,
+                            shadowOffset = 2.dp,
+                            cornerRadius = 8.dp,
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("ADD", fontWeight = FontWeight.Bold)
+                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp), tint = NeobrutalBlack)
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Text("ADD", fontWeight = FontWeight.Black, style = MaterialTheme.typography.labelMedium)
                         }
                     } else {
-                        // Quantity Stepper
+                        // Neobrutal Stepper
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(MaterialTheme.colorScheme.primaryContainer)
-                                .padding(horizontal = 4.dp, vertical = 2.dp)
+                                .background(MintGreen)
+                                .border(BorderStroke(1.5.dp, NeobrutalBlack), RoundedCornerShape(8.dp))
+                                .padding(horizontal = 2.dp, vertical = 1.dp)
                         ) {
                             IconButton(
                                 onClick = onDecrement,
-                                modifier = Modifier.size(28.dp)
+                                modifier = Modifier.size(24.dp)
                             ) {
                                 Icon(
                                     imageVector = if (quantityInCart == 1) Icons.Default.Delete else Icons.Default.Remove,
                                     contentDescription = "Decrease",
-                                    modifier = Modifier.size(16.dp),
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                    modifier = Modifier.size(14.dp),
+                                    tint = NeobrutalBlack
                                 )
                             }
 
                             Text(
                                 text = "$quantityInCart",
                                 style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                fontWeight = FontWeight.Black,
+                                color = NeobrutalBlack,
                                 modifier = Modifier.padding(horizontal = 6.dp)
                             )
 
                             IconButton(
                                 onClick = onAddToCart,
-                                modifier = Modifier.size(28.dp),
+                                modifier = Modifier.size(24.dp),
                                 enabled = quantityInCart < item.StockQty
                             ) {
                                 Icon(
                                     Icons.Default.Add,
                                     contentDescription = "Increase",
-                                    modifier = Modifier.size(16.dp),
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                    modifier = Modifier.size(14.dp),
+                                    tint = NeobrutalBlack
                                 )
                             }
                         }
@@ -423,4 +504,5 @@ fun MenuItemCard(
         }
     }
 }
+
 
