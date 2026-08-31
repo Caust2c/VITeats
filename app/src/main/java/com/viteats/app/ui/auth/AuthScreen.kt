@@ -124,7 +124,9 @@ fun AuthScreen(
                     Text(
                         text = "Sign in with your VIT application credentials",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MutedText
+                        color = MutedText,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
                     )
 
                     Spacer(modifier = Modifier.height(20.dp))
@@ -233,9 +235,11 @@ fun AuthScreen(
                         borderWidth = 2.dp,
                         shadowOffset = 3.dp,
                         cornerRadius = 14.dp,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp),
                         enabled = authState !is AuthState.Loading && appNumber.isNotBlank() && pin.isNotBlank(),
-                        contentPadding = PaddingValues(vertical = 14.dp)
+                        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 14.dp)
                     ) {
                         if (authState is AuthState.Loading) {
                             CircularProgressIndicator(
