@@ -85,7 +85,7 @@ fun HomeScreen(
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {
             when (selectedTab) {
-                0 -> StudentScreen(viewModel = studentViewModel)
+                0 -> StudentScreen(viewModel = studentViewModel, onNavigateToTab = { selectedTab = it })
                 1 -> MenuScreen(viewModel = menuViewModel)
                 2 -> OrdersScreen(viewModel = ordersViewModel, onOrderClick = onOrderClick)
             }
