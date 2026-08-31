@@ -25,6 +25,8 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.viteats.app.ui.components.NeobrutalButton
 import com.viteats.app.ui.theme.*
 import kotlinx.coroutines.flow.collectLatest
 
@@ -53,6 +55,64 @@ fun HomeScreen(
 
     Scaffold(
         containerColor = LavenderBackground,
+        topBar = {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .drawBehind {
+                        drawLine(
+                            color = NeobrutalBlack,
+                            start = Offset(0f, size.height),
+                            end = Offset(size.width, size.height),
+                            strokeWidth = 3f
+                        )
+                    },
+                color = NeobrutalWhite
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "VITeats",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Black,
+                        color = NeobrutalBlack,
+                        letterSpacing = (-0.5).sp
+                    )
+
+                    NeobrutalButton(
+                        onClick = {
+                            authViewModel.logout()
+                            onLogout()
+                        },
+                        backgroundColor = SoftCoral,
+                        contentColor = NeobrutalBlack,
+                        borderColor = NeobrutalBlack,
+                        borderWidth = 1.5.dp,
+                        shadowOffset = 2.dp,
+                        cornerRadius = 10.dp,
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Logout,
+                            contentDescription = "Logout",
+                            modifier = Modifier.size(16.dp),
+                            tint = NeobrutalBlack
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Logout",
+                            fontWeight = FontWeight.Black,
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    }
+                }
+            }
+        },
         bottomBar = {
             Surface(
                 modifier = Modifier
