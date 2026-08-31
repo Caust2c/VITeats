@@ -43,6 +43,8 @@ fun AuthScreen(
     var pin by remember { mutableStateOf("") }
     val scrollState = rememberScrollState()
 
+    var inputError by remember { mutableStateOf<String?>(null) }
+
     LaunchedEffect(authState) {
         if (authState is AuthState.Success) {
             onLoginSuccess()
@@ -122,7 +124,7 @@ fun AuthScreen(
                     Spacer(modifier = Modifier.height(6.dp))
 
                     Text(
-                        text = "Sign in with your VIT application credentials",
+                        text = "Sign in with your credentials",
                         style = MaterialTheme.typography.bodySmall,
                         color = MutedText,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -207,7 +209,8 @@ fun AuthScreen(
                     Spacer(modifier = Modifier.height(20.dp))
 
                     // Error Alert Banner
-                    if (authState is AuthState.Error) {
+                    val errorMessage = (authState as? AuthState.Error)?.message ?: inputError
+                    if (errorMessage != null) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -217,7 +220,7 @@ fun AuthScreen(
                                 .padding(12.dp)
                         ) {
                             Text(
-                                text = (authState as AuthState.Error).message,
+                                text = errorMessage,
                                 color = NeobrutalBlack,
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Bold
@@ -228,7 +231,14 @@ fun AuthScreen(
 
                     // Sign In Button
                     NeobrutalButton(
-                        onClick = { viewModel.login(appNumber.trim(), pin.trim()) },
+                        onClick = {
+                            if (appNumber.isBlank() || pin.isBlank()) {
+                                inputError = "Please enter both Application Number and PIN"
+                            } else {
+                                inputError = null
+                                viewModel.login(appNumber.trim(), pin.trim())
+                            }
+                        },
                         backgroundColor = MintGreen,
                         contentColor = NeobrutalBlack,
                         borderColor = NeobrutalBlack,
@@ -238,7 +248,7 @@ fun AuthScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 4.dp),
-                        enabled = authState !is AuthState.Loading && appNumber.isNotBlank() && pin.isNotBlank(),
+                        enabled = authState !is AuthState.Loading,
                         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 14.dp)
                     ) {
                         if (authState is AuthState.Loading) {

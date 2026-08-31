@@ -97,13 +97,16 @@ fun NeobrutalButton(
     val currentOffset = if (isPressed && enabled) 1.dp else shadowOffset
 
     Box(modifier = modifier) {
-        // Shadow
-        if (enabled && shadowOffset > 0.dp) {
+        // Shadow - always rendered with shape so it doesn't pop in/out abruptly
+        if (shadowOffset > 0.dp) {
             Box(
                 modifier = Modifier
                     .matchParentSize()
                     .offset(x = currentOffset, y = currentOffset)
-                    .background(borderColor, shape = shape)
+                    .background(
+                        if (enabled) borderColor else borderColor.copy(alpha = 0.2f),
+                        shape = shape
+                    )
             )
         }
 
@@ -111,15 +114,21 @@ fun NeobrutalButton(
         Surface(
             modifier = Modifier
                 .clip(shape)
-                .border(BorderStroke(borderWidth, if (enabled) borderColor else borderColor.copy(alpha = 0.4f)), shape)
+                .border(
+                    BorderStroke(
+                        borderWidth,
+                        if (enabled) borderColor else borderColor.copy(alpha = 0.35f)
+                    ),
+                    shape
+                )
                 .clickable(
                     enabled = enabled,
                     interactionSource = interactionSource,
                     indication = null,
                     onClick = onClick
                 ),
-            color = if (enabled) backgroundColor else backgroundColor.copy(alpha = 0.5f),
-            contentColor = contentColor,
+            color = if (enabled) backgroundColor else backgroundColor.copy(alpha = 0.45f),
+            contentColor = if (enabled) contentColor else contentColor.copy(alpha = 0.5f),
             shape = shape
         ) {
             Row(
