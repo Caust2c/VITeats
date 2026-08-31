@@ -11,7 +11,15 @@ class StudentRepository(
     private val sessionManager: SessionManager
 ) {
     suspend fun getBalance(): Response<List<BalanceResponse>> {
-        val regNo = sessionManager.registrationNumber ?: return Response.error(401, "".toResponseBody(null))
-        return api.getBalanceInfo(regNo)
+        val regNo = sessionManager.registrationNumber
+        if (regNo.isNullOrBlank()) {
+            sessionManager.notifySessionExpired()
+            return Response.error(401, "".toResponseBody(null))
+        }
+        val response = api.getBalanceInfo(regNo)
+        if (response.code() == 401 || response.code() == 403) {
+            sessionManager.notifySessionExpired()
+        }
+        return response
     }
 }

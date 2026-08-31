@@ -95,6 +95,11 @@ class MenuRepository(
     }
 
     private inline fun <reified T> parseResponse(response: Response<String>): List<T> {
+        if (response.code() == 401 || response.code() == 403) {
+            Log.w(tag, "Session expired or unauthorized: ${response.code()}")
+            sessionManager.notifySessionExpired()
+            return emptyList()
+        }
         if (!response.isSuccessful) {
             Log.e(tag, "API Error: ${response.code()} ${response.message()}")
             return emptyList()

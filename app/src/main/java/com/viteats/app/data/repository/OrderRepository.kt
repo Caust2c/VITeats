@@ -14,8 +14,16 @@ class OrderRepository(
     private val gson = Gson()
 
     suspend fun getRawOrders(): String {
-        val userId = sessionManager.userIdentifier ?: return "Error: No User Identifier"
+        val userId = sessionManager.userIdentifier
+        if (userId.isNullOrBlank()) {
+            sessionManager.notifySessionExpired()
+            return "Error: No User Identifier"
+        }
         val response = api.getOrderList(OrderListRequest(userId))
+        if (response.code() == 401 || response.code() == 403) {
+            sessionManager.notifySessionExpired()
+            return "Error: Session Expired"
+        }
         if (!response.isSuccessful) return "Error: ${response.code()} ${response.message()}"
         return response.body() ?: "Empty body"
     }

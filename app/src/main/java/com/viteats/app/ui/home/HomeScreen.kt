@@ -2,9 +2,9 @@ package com.viteats.app.ui.home
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.viteats.app.VITeatsApplication
+import com.viteats.app.data.SessionEvent
 import com.viteats.app.ui.ViewModelFactory
 import com.viteats.app.ui.auth.AuthViewModel
 import com.viteats.app.ui.menu.MenuScreen
@@ -20,18 +21,30 @@ import com.viteats.app.ui.orders.OrdersScreen
 import com.viteats.app.ui.orders.OrdersViewModel
 import com.viteats.app.ui.student.StudentScreen
 import com.viteats.app.ui.student.StudentViewModel
+import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onOrderClick: (String) -> Unit,
     onLogout: () -> Unit,
+    onNavigateToCart: () -> Unit = {},
     authViewModel: AuthViewModel = viewModel(factory = ViewModelFactory(LocalContext.current.applicationContext as VITeatsApplication)),
     studentViewModel: StudentViewModel = viewModel(factory = ViewModelFactory(LocalContext.current.applicationContext as VITeatsApplication)),
     menuViewModel: MenuViewModel = viewModel(factory = ViewModelFactory(LocalContext.current.applicationContext as VITeatsApplication)),
     ordersViewModel: OrdersViewModel = viewModel(factory = ViewModelFactory(LocalContext.current.applicationContext as VITeatsApplication))
 ) {
+    val context = LocalContext.current
+    val app = context.applicationContext as VITeatsApplication
     var selectedTab by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(Unit) {
+        app.sessionManager.sessionEvents.collectLatest { event ->
+            if (event is SessionEvent.SessionExpired || event is SessionEvent.LoggedOut) {
+                onLogout()
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -42,7 +55,7 @@ fun HomeScreen(
                         authViewModel.logout()
                         onLogout()
                     }) {
-                        Icon(Icons.Default.Logout, contentDescription = "Logout")
+                        Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Logout")
                     }
                 }
             )
