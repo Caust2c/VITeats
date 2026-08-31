@@ -16,6 +16,7 @@ class VITeatsApplication : Application(), ImageLoaderFactory {
     lateinit var studentRepository: StudentRepository
     lateinit var menuRepository: MenuRepository
     lateinit var orderRepository: OrderRepository
+    lateinit var cartRepository: com.viteats.app.data.repository.CartRepository
 
     override fun onCreate() {
         super.onCreate()
@@ -25,6 +26,7 @@ class VITeatsApplication : Application(), ImageLoaderFactory {
         studentRepository = StudentRepository(api, sessionManager)
         menuRepository = MenuRepository(api, sessionManager)
         orderRepository = OrderRepository(api, sessionManager)
+        cartRepository = com.viteats.app.data.repository.CartRepository()
     }
 
     override fun newImageLoader(): ImageLoader {

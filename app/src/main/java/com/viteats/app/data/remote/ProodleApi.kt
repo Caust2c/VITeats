@@ -27,4 +27,13 @@ interface ProodleApi {
 
     @GET("orderQR")
     suspend fun getOrderQR(@Query("ordno") orderId: String): Response<String>
+
+    @POST("GetOrderIdDetails")
+    suspend fun getOrderId(@Body request: OrderIdRequest): Response<List<OrderIdResponse>>
+
+    @POST("GetOutletListInsert")
+    suspend fun insertOrder(@Body request: OrderInsertRequest): Response<String>
+
+    @POST("OnlineWPayment")
+    suspend fun processPayment(@Body request: PaymentRequest): Response<String>
 }
