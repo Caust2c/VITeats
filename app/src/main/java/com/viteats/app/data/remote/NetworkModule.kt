@@ -28,7 +28,7 @@ object NetworkModule {
         }
     }
 
-    private val okHttpClient = OkHttpClient.Builder()
+    val okHttpClient = OkHttpClient.Builder()
         .cookieJar(SimpleCookieJar())
         .addInterceptor { chain ->
             val request = chain.request().newBuilder()
