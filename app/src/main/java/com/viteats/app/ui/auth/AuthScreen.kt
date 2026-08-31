@@ -134,7 +134,13 @@ fun AuthScreen(
                         value = appNumber,
                         onValueChange = { appNumber = it },
                         label = { Text("Application Number / Reg No", fontWeight = FontWeight.Bold) },
-                        placeholder = { Text("e.g. 21BCE1234") },
+                        placeholder = { 
+                            Text(
+                                "e.g. 21BCE1234", 
+                                color = Color(0xFF64748B),
+                                fontWeight = FontWeight.Medium
+                            ) 
+                        },
                         leadingIcon = {
                             Icon(Icons.Default.Person, contentDescription = null, tint = NeobrutalBlack)
                         },
@@ -144,9 +150,16 @@ fun AuthScreen(
                         enabled = authState !is AuthState.Loading,
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = NeobrutalBlack,
+                            unfocusedTextColor = NeobrutalBlack,
                             focusedBorderColor = NeobrutalBlack,
-                            unfocusedBorderColor = NeobrutalBlack.copy(alpha = 0.5f),
+                            unfocusedBorderColor = NeobrutalBlack.copy(alpha = 0.6f),
                             focusedLabelColor = NeobrutalBlack,
+                            unfocusedLabelColor = Color(0xFF334155),
+                            focusedPlaceholderColor = Color(0xFF64748B),
+                            unfocusedPlaceholderColor = Color(0xFF64748B),
+                            focusedContainerColor = LavenderCard,
+                            unfocusedContainerColor = LavenderCard,
                             cursorColor = NeobrutalBlack
                         )
                     )
@@ -157,8 +170,14 @@ fun AuthScreen(
                     OutlinedTextField(
                         value = pin,
                         onValueChange = { pin = it },
-                        label = { Text("6-Digit Mess PIN", fontWeight = FontWeight.Bold) },
-                        placeholder = { Text("Enter PIN") },
+                        label = { Text("PIN", fontWeight = FontWeight.Bold) },
+                        placeholder = { 
+                            Text(
+                                "Enter PIN", 
+                                color = Color(0xFF64748B),
+                                fontWeight = FontWeight.Medium
+                            ) 
+                        },
                         leadingIcon = {
                             Icon(Icons.Default.Key, contentDescription = null, tint = NeobrutalBlack)
                         },
@@ -169,9 +188,16 @@ fun AuthScreen(
                         enabled = authState !is AuthState.Loading,
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = NeobrutalBlack,
+                            unfocusedTextColor = NeobrutalBlack,
                             focusedBorderColor = NeobrutalBlack,
-                            unfocusedBorderColor = NeobrutalBlack.copy(alpha = 0.5f),
+                            unfocusedBorderColor = NeobrutalBlack.copy(alpha = 0.6f),
                             focusedLabelColor = NeobrutalBlack,
+                            unfocusedLabelColor = Color(0xFF334155),
+                            focusedPlaceholderColor = Color(0xFF64748B),
+                            unfocusedPlaceholderColor = Color(0xFF64748B),
+                            focusedContainerColor = LavenderCard,
+                            unfocusedContainerColor = LavenderCard,
                             cursorColor = NeobrutalBlack
                         )
                     )
