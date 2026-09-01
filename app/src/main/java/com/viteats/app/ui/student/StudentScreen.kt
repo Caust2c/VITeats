@@ -244,6 +244,10 @@ fun NeobrutalDetailRow(
     label: String,
     value: String
 ) {
+    val breakableValue = remember(value) {
+        value.replace("@", "@\u200B")
+    }
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -251,7 +255,7 @@ fun NeobrutalDetailRow(
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(end = 8.dp)
+            modifier = Modifier.padding(end = 12.dp)
         ) {
             Icon(
                 imageVector = icon,
@@ -270,7 +274,7 @@ fun NeobrutalDetailRow(
         }
 
         Text(
-            text = value,
+            text = breakableValue,
             style = MaterialTheme.typography.bodySmall.copy(
                 lineBreak = androidx.compose.ui.text.style.LineBreak.Simple
             ),
@@ -278,8 +282,8 @@ fun NeobrutalDetailRow(
             color = NeobrutalBlack,
             fontSize = 13.5.sp,
             textAlign = androidx.compose.ui.text.style.TextAlign.End,
-            modifier = Modifier.weight(1f), 
-            maxLines = 2, 
+            modifier = Modifier.weight(1f),
+            maxLines = 2,
             softWrap = true
         )
     }
