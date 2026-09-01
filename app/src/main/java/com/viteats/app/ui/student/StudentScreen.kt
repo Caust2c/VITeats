@@ -147,21 +147,21 @@ fun StudentScreen(
                                 isSelected = false
                             )
 
-                            // Bold "Order" Button
+                            // Compact Auto-width "Order" Button
                             NeobrutalButton(
                                 onClick = { onNavigateToTab?.invoke(1) },
                                 backgroundColor = MintGreen,
                                 contentColor = NeobrutalBlack,
                                 borderColor = NeobrutalBlack,
                                 borderWidth = 2.dp,
-                                shadowOffset = 3.dp,
-                                cornerRadius = 12.dp,
-                                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 10.dp)
+                                shadowOffset = 2.5.dp,
+                                cornerRadius = 10.dp,
+                                contentPadding = PaddingValues(horizontal = 18.dp, vertical = 7.dp)
                             ) {
                                 Text(
                                     text = "Order",
                                     fontWeight = FontWeight.Black,
-                                    style = MaterialTheme.typography.titleMedium
+                                    style = MaterialTheme.typography.labelLarge
                                 )
                             }
                         }
@@ -250,29 +250,33 @@ fun NeobrutalDetailRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.weight(1f)
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = label,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(22.dp),
                 tint = NeobrutalBlack
             )
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(10.dp))
             Text(
                 text = label,
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 color = NeobrutalBlack
             )
         }
 
+        Spacer(modifier = Modifier.width(12.dp))
+
         Text(
             text = value,
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.SemiBold,
-            color = NeobrutalBlack
+            color = NeobrutalBlack,
+            maxLines = 1,
+            softWrap = false,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
         )
     }
 }

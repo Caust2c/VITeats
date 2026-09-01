@@ -399,7 +399,7 @@ fun OrderListItem(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Prominent Yellow "1-Click Reorder" button
+                // Compact Auto-width Yellow "1-Click Reorder" button
                 NeobrutalButton(
                     onClick = onReorder,
                     backgroundColor = PastelYellow,
@@ -407,21 +407,20 @@ fun OrderListItem(
                     borderColor = NeobrutalBlack,
                     borderWidth = 2.dp,
                     shadowOffset = 2.dp,
-                    cornerRadius = 10.dp,
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+                    cornerRadius = 8.dp,
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Replay,
                         contentDescription = null,
-                        modifier = Modifier.size(16.dp),
+                        modifier = Modifier.size(15.dp),
                         tint = NeobrutalBlack
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "1-Click Reorder",
                         fontWeight = FontWeight.Black,
-                        style = MaterialTheme.typography.labelLarge
+                        style = MaterialTheme.typography.labelMedium
                     )
                 }
 
@@ -434,20 +433,20 @@ fun OrderListItem(
                         borderColor = NeobrutalBlack,
                         borderWidth = 2.dp,
                         shadowOffset = 2.dp,
-                        cornerRadius = 10.dp,
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                        cornerRadius = 8.dp,
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.QrCode2,
                             contentDescription = "View QR",
-                            modifier = Modifier.size(16.dp),
+                            modifier = Modifier.size(15.dp),
                             tint = NeobrutalBlack
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = "QR",
                             fontWeight = FontWeight.Black,
-                            style = MaterialTheme.typography.labelLarge
+                            style = MaterialTheme.typography.labelMedium
                         )
                     }
                 }

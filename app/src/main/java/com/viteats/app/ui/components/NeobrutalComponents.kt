@@ -85,11 +85,11 @@ fun NeobrutalButton(
     contentColor: Color = NeobrutalBlack,
     borderColor: Color = NeobrutalBlack,
     borderWidth: Dp = 2.dp,
-    shadowOffset: Dp = 3.dp,
-    cornerRadius: Dp = 12.dp,
+    shadowOffset: Dp = 2.5.dp,
+    cornerRadius: Dp = 10.dp,
     shape: Shape = RoundedCornerShape(cornerRadius),
     enabled: Boolean = true,
-    contentPadding: PaddingValues = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+    contentPadding: PaddingValues = PaddingValues(horizontal = 14.dp, vertical = 7.dp),
     content: @Composable RowScope.() -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -97,7 +97,7 @@ fun NeobrutalButton(
     val currentOffset = if (isPressed && enabled) 1.dp else shadowOffset
 
     Box(modifier = modifier) {
-        // Shadow - always rendered with shape so it doesn't pop in/out abruptly
+        // Shadow
         if (shadowOffset > 0.dp) {
             Box(
                 modifier = Modifier
@@ -113,7 +113,6 @@ fun NeobrutalButton(
         // Button Surface
         Surface(
             modifier = Modifier
-                .fillMaxWidth()
                 .clip(shape)
                 .border(
                     BorderStroke(
@@ -133,9 +132,7 @@ fun NeobrutalButton(
             shape = shape
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(contentPadding),
+                modifier = Modifier.padding(contentPadding),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
                 content = content
@@ -155,7 +152,7 @@ fun NeobrutalPill(
     onClick: (() -> Unit)? = null
 ) {
     val shape = RoundedCornerShape(50)
-    val shadowOffset = if (isSelected) 3.dp else 2.dp
+    val shadowOffset = if (isSelected) 2.5.dp else 1.5.dp
 
     Box(modifier = modifier) {
         if (shadowOffset > 0.dp) {
@@ -171,11 +168,11 @@ fun NeobrutalPill(
             modifier = Modifier
                 .clip(shape)
                 .background(backgroundColor)
-                .border(BorderStroke(2.dp, borderColor), shape)
+                .border(BorderStroke(1.5.dp, borderColor), shape)
                 .then(
                     if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier
                 )
-                .padding(horizontal = 14.dp, vertical = 6.dp),
+                .padding(horizontal = 10.dp, vertical = 4.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
