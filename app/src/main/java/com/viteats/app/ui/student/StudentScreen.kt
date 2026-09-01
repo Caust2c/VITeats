@@ -187,7 +187,7 @@ fun StudentScreen(
                             color = NeobrutalBlack
                         )
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(2.dp))
 
                         NeobrutalDetailRow(
                             icon = Icons.Outlined.Email,
@@ -247,32 +247,39 @@ fun NeobrutalDetailRow(
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.Top
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.padding(end = 12.dp)
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = label,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(20.dp),
                 tint = NeobrutalBlack
             )
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = label,
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Bold,
-                color = NeobrutalBlack
+                color = NeobrutalBlack,
+                fontSize = 13.5.sp
             )
         }
 
         Text(
             text = value,
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodySmall.copy(
+                lineBreak = androidx.compose.ui.text.style.LineBreak.Paragraph
+            ),
             fontWeight = FontWeight.SemiBold,
-            color = NeobrutalBlack
+            color = NeobrutalBlack,
+            fontSize = 13.5.sp,
+            textAlign = androidx.compose.ui.text.style.TextAlign.End,
+            modifier = Modifier.weight(1f, fill = false),
+            softWrap = true
         )
     }
 }
