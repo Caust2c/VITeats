@@ -492,5 +492,3 @@ fun isQrAvailable(order: Order): Boolean {
         false
     }
 }
-
-

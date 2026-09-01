@@ -147,21 +147,21 @@ fun StudentScreen(
                                 isSelected = false
                             )
 
-                            // Compact Auto-width "Order" Button
+                            // Bold "Order" Button
                             NeobrutalButton(
                                 onClick = { onNavigateToTab?.invoke(1) },
                                 backgroundColor = MintGreen,
                                 contentColor = NeobrutalBlack,
                                 borderColor = NeobrutalBlack,
                                 borderWidth = 2.dp,
-                                shadowOffset = 2.5.dp,
-                                cornerRadius = 10.dp,
-                                contentPadding = PaddingValues(horizontal = 18.dp, vertical = 7.dp)
+                                shadowOffset = 3.dp,
+                                cornerRadius = 12.dp,
+                                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 10.dp)
                             ) {
                                 Text(
                                     text = "Order",
                                     fontWeight = FontWeight.Black,
-                                    style = MaterialTheme.typography.labelLarge
+                                    style = MaterialTheme.typography.titleMedium
                                 )
                             }
                         }
@@ -187,18 +187,18 @@ fun StudentScreen(
                             color = NeobrutalBlack
                         )
 
-                        Spacer(modifier = Modifier.height(2.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
 
                         NeobrutalDetailRow(
                             icon = Icons.Outlined.Email,
                             label = "Email",
-                            value = balance.email.ifBlank { "rahul.s@vit.ac.in" }
+                            value = balance.email.ifBlank { "email.student@vit.ac.in" }
                         )
 
                         NeobrutalDetailRow(
                             icon = Icons.Outlined.CreditCard,
                             label = "Card No",
-                            value = if (balance.cardno.isNotBlank()) "**** ${balance.cardno.takeLast(4)}" else "**** 1234"
+                            value = if (balance.cardno.isNotBlank()) balance.cardno.takeLast(4) else "1234"
                         )
 
                         NeobrutalDetailRow(
@@ -250,33 +250,29 @@ fun NeobrutalDetailRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.weight(1f)
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = label,
-                modifier = Modifier.size(22.dp),
+                modifier = Modifier.size(24.dp),
                 tint = NeobrutalBlack
             )
-            Spacer(modifier = Modifier.width(10.dp))
+            Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = label,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Bold,
                 color = NeobrutalBlack
             )
         }
 
-        Spacer(modifier = Modifier.width(12.dp))
-
         Text(
             text = value,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.SemiBold,
-            color = NeobrutalBlack,
-            maxLines = 1,
-            softWrap = false,
-            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            color = NeobrutalBlack
         )
     }
 }
