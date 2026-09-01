@@ -245,27 +245,29 @@ fun NeobrutalDetailRow(
     value: String
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.Top
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(end = 12.dp)
+            modifier = Modifier.padding(end = 8.dp)
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = label,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(18.dp),
                 tint = NeobrutalBlack
             )
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(6.dp))
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Bold,
                 color = NeobrutalBlack,
-                fontSize = 13.5.sp
+                fontSize = 13.sp
             )
         }
 
@@ -276,9 +278,9 @@ fun NeobrutalDetailRow(
             ),
             fontWeight = FontWeight.SemiBold,
             color = NeobrutalBlack,
-            fontSize = 13.5.sp,
+            fontSize = 13.sp,
             textAlign = androidx.compose.ui.text.style.TextAlign.End,
-            modifier = Modifier.weight(1f, fill = false),
+            modifier = Modifier.weight(1f),
             softWrap = true
         )
     }
