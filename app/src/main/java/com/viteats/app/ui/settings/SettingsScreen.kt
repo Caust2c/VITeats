@@ -135,73 +135,6 @@ fun SettingsScreen(
             }
         }
 
-        // --- Account & Student Info Card ---
-        NeobrutalCard(
-            backgroundColor = cardBg,
-            borderColor = NeobrutalBlack,
-            borderWidth = 2.5.dp,
-            shadowOffset = 4.dp,
-            cornerRadius = 16.dp
-        ) {
-            Column(
-                modifier = Modifier.padding(18.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Student Profile",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Black,
-                        color = textPrimary
-                    )
-
-                    NeobrutalPill(
-                        text = "Active",
-                        backgroundColor = MintGreen,
-                        textColor = NeobrutalBlack,
-                        isSelected = false
-                    )
-                }
-
-                val custIdText = studentProfile?.let {
-                    if (it.custid.isNotBlank()) it.custid else if (it.regno.isNotBlank()) it.regno else "21BCE1234"
-                } ?: "21BCE1234"
-
-                val emailText = studentProfile?.let {
-                    if (it.email.isNotBlank()) it.email else "rahul.s@vit.ac.in"
-                } ?: "rahul.s@vit.ac.in"
-
-                val cardNoText = studentProfile?.let {
-                    if (it.cardno.isNotBlank()) "**** ${it.cardno.takeLast(4)}" else "**** 1234"
-                } ?: "**** 1234"
-
-                SettingsDetailRow(
-                    icon = Icons.Outlined.Person,
-                    label = "Customer ID",
-                    value = custIdText,
-                    textColor = textPrimary
-                )
-
-                SettingsDetailRow(
-                    icon = Icons.Outlined.Email,
-                    label = "Email",
-                    value = emailText,
-                    textColor = textPrimary
-                )
-
-                SettingsDetailRow(
-                    icon = Icons.Outlined.CreditCard,
-                    label = "Card No",
-                    value = cardNoText,
-                    textColor = textPrimary
-                )
-            }
-        }
-
         // --- University Mess Schedule Card ---
         NeobrutalCard(
             backgroundColor = cardBg,
@@ -223,10 +156,10 @@ fun SettingsScreen(
 
                 HorizontalDivider(color = NeobrutalBlack.copy(alpha = 0.15f), thickness = 1.dp)
 
-                MessHourRow("Breakfast", "07:30 AM – 09:30 AM", SoftCyan, textPrimary)
-                MessHourRow("Lunch", "12:00 PM – 02:30 PM", PastelYellow, textPrimary)
-                MessHourRow("Snacks", "04:30 PM – 06:00 PM", SoftCoral, textPrimary)
-                MessHourRow("Dinner", "07:30 PM – 09:30 PM", MintGreen, textPrimary)
+                MessHourRow("Breakfast", "07:00 AM – 09:00 AM", SoftCyan, textPrimary)
+                MessHourRow("Lunch", "12:00 PM – 02:00 PM", PastelYellow, textPrimary)
+                MessHourRow("Snacks", "05:00 PM – 06:30 PM", SoftCoral, textPrimary)
+                MessHourRow("Dinner", "07:00 PM – 09:00 PM", MintGreen, textPrimary)
             }
         }
 
@@ -254,29 +187,10 @@ fun SettingsScreen(
                         color = textPrimary
                     )
                     Text(
-                        text = "v1.1.0 (Review 1)",
+                        text = "v1.1.0",
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Black,
                         color = textMuted
-                    )
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Server Connection",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = textPrimary
-                    )
-                    NeobrutalPill(
-                        text = "Proodle API Online",
-                        backgroundColor = MintGreen,
-                        textColor = NeobrutalBlack,
-                        isSelected = false
                     )
                 }
             }
