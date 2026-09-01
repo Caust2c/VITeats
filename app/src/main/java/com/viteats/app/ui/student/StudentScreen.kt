@@ -246,12 +246,12 @@ fun NeobrutalDetailRow(
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.Top
     ) {
-        // Left Side: Group icon and bold label at natural width
         Row(
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(end = 8.dp)
         ) {
             Icon(
                 imageVector = icon,
@@ -259,7 +259,7 @@ fun NeobrutalDetailRow(
                 modifier = Modifier.size(20.dp),
                 tint = NeobrutalBlack
             )
-            Spacer(modifier = Modifier.width(6.dp))
+            Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodySmall,
@@ -269,17 +269,17 @@ fun NeobrutalDetailRow(
             )
         }
 
-        // Right Side: Fills all remaining space (flex-1), text-right, and breaks words cleanly
         Text(
             text = value,
             style = MaterialTheme.typography.bodySmall.copy(
-                lineBreak = androidx.compose.ui.text.style.LineBreak.Paragraph
+                lineBreak = androidx.compose.ui.text.style.LineBreak.Simple
             ),
             fontWeight = FontWeight.SemiBold,
             color = NeobrutalBlack,
             fontSize = 13.5.sp,
             textAlign = androidx.compose.ui.text.style.TextAlign.End,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f), 
+            maxLines = 2, 
             softWrap = true
         )
     }
