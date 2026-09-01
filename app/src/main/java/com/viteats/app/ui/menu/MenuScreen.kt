@@ -135,12 +135,7 @@ fun MenuScreen(
                         items(categories) { category ->
                             val isSelected = selectedCategory == category
                             val isFavCategory = category == "Favourites"
-                            val pillBg = when {
-                                isSelected && isFavCategory -> SoftCoral
-                                isSelected -> MintGreen
-                                isFavCategory -> SoftCoral.copy(alpha = 0.6f)
-                                else -> NeobrutalWhite
-                            }
+                            val pillBg = if (isSelected) MintGreen else NeobrutalWhite
 
                             NeobrutalPill(
                                 text = if (isFavCategory) "♥ Favourites" else category,

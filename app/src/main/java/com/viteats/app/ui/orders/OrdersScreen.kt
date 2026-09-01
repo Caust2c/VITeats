@@ -1,23 +1,28 @@
 package com.viteats.app.ui.orders
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.QrCode2
-import androidx.compose.material.icons.filled.Replay
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.viteats.app.data.remote.Order
@@ -217,13 +222,25 @@ fun OrderListItem(
     onReorder: () -> Unit
 ) {
     val qrAvailable = isQrAvailable(order)
+    var isExpanded by remember { mutableStateOf(false) }
+
+    // Parse items list and formatted summary
+    val parsedItems = remember(order.sname) {
+        if (order.sname.isBlank()) listOf("Mess Meal")
+        else order.sname.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+    }
+
+    val summaryText = remember(parsedItems) {
+        parsedItems.joinToString(", ") { "$it x1" }
+    }
 
     NeobrutalCard(
         backgroundColor = NeobrutalWhite,
         borderColor = NeobrutalBlack,
         borderWidth = 2.dp,
         shadowOffset = 4.dp,
-        cornerRadius = 16.dp
+        cornerRadius = 16.dp,
+        modifier = Modifier.animateContentSize()
     ) {
         Column(
             modifier = Modifier
@@ -255,11 +272,11 @@ fun OrderListItem(
                 NeobrutalStatusBadge(status = order.Status)
             }
 
-            // Order Content & Price
+            // Order Content Summary & Price
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
@@ -268,14 +285,21 @@ fun OrderListItem(
                         fontWeight = FontWeight.Black,
                         color = NeobrutalBlack
                     )
-                    if (order.studname.isNotBlank()) {
-                        Text(
-                            text = order.studname,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MutedText
-                        )
-                    }
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    // Truncated Order Summary string (replaces orderee name)
+                    Text(
+                        text = summaryText,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MutedText,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
+
+                Spacer(modifier = Modifier.width(12.dp))
 
                 Text(
                     text = "₹${order.NetAmount.toInt()}",
@@ -283,6 +307,90 @@ fun OrderListItem(
                     fontWeight = FontWeight.Black,
                     color = NeobrutalBlack
                 )
+            }
+
+            // "View Items" Accordion Toggle Button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (isExpanded) SoftCyan else LavenderCard)
+                        .border(BorderStroke(1.5.dp, NeobrutalBlack), RoundedCornerShape(8.dp))
+                        .clickable { isExpanded = !isExpanded }
+                        .padding(horizontal = 10.dp, vertical = 5.dp)
+                ) {
+                    Text(
+                        text = if (isExpanded) "Hide Items" else "View Items",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Black,
+                        color = NeobrutalBlack
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Icon(
+                        imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (isExpanded) "Hide items" else "View items",
+                        tint = NeobrutalBlack,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+
+            // Expanded Accordion List of Purchased Items
+            AnimatedVisibility(visible = isExpanded) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(LavenderCard)
+                        .border(BorderStroke(1.5.dp, NeobrutalBlack), RoundedCornerShape(10.dp))
+                        .padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "PURCHASED ITEMS",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Black,
+                        color = MutedText,
+                        letterSpacing = 0.5.sp
+                    )
+                    HorizontalDivider(color = NeobrutalBlack.copy(alpha = 0.15f), thickness = 1.dp)
+
+                    parsedItems.forEach { item ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .background(NeobrutalBlack, shape = RoundedCornerShape(50))
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = item,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = NeobrutalBlack
+                                )
+                            }
+                            Text(
+                                text = "x1",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Black,
+                                color = NeobrutalBlack
+                            )
+                        }
+                    }
+                }
             }
 
             // Action Buttons: 1-Click Reorder & View QR (if available)

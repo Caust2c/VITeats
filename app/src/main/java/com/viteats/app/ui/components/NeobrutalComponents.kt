@@ -113,6 +113,7 @@ fun NeobrutalButton(
         // Button Surface
         Surface(
             modifier = Modifier
+                .fillMaxWidth()
                 .clip(shape)
                 .border(
                     BorderStroke(
@@ -132,7 +133,9 @@ fun NeobrutalButton(
             shape = shape
         ) {
             Row(
-                modifier = Modifier.padding(contentPadding),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(contentPadding),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
                 content = content
