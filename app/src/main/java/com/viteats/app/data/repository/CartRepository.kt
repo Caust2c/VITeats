@@ -11,17 +11,23 @@ class CartRepository {
     private val _cartItems = MutableStateFlow<List<CartItem>>(emptyList())
     val cartItems: StateFlow<List<CartItem>> = _cartItems.asStateFlow()
 
-    fun addItem(item: MenuItem) {
+    fun addItem(item: MenuItem, quantity: Int = 1) {
         _cartItems.update { currentList ->
             val existing = currentList.find { it.item.meitid == item.meitid }
             if (existing != null) {
                 currentList.map {
-                    if (it.item.meitid == item.meitid) it.copy(quantity = it.quantity + 1)
+                    if (it.item.meitid == item.meitid) it.copy(quantity = it.quantity + quantity)
                     else it
                 }
             } else {
-                currentList + CartItem(item = item, quantity = 1)
+                currentList + CartItem(item = item, quantity = quantity)
             }
+        }
+    }
+
+    fun addItems(items: List<Pair<MenuItem, Int>>) {
+        items.forEach { (item, qty) ->
+            addItem(item, qty)
         }
     }
 

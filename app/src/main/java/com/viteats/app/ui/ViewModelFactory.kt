@@ -18,9 +18,9 @@ class ViewModelFactory(private val application: VITeatsApplication) : ViewModelP
             modelClass.isAssignableFrom(StudentViewModel::class.java) ->
                 StudentViewModel(application.studentRepository) as T
             modelClass.isAssignableFrom(MenuViewModel::class.java) ->
-                MenuViewModel(application.menuRepository, application.cartRepository) as T
+                MenuViewModel(application.menuRepository, application.cartRepository, application.favouritesManager) as T
             modelClass.isAssignableFrom(OrdersViewModel::class.java) ->
-                OrdersViewModel(application.orderRepository) as T
+                OrdersViewModel(application.orderRepository, application.cartRepository, application.menuRepository) as T
             modelClass.isAssignableFrom(CartViewModel::class.java) ->
                 CartViewModel(application.cartRepository, application.orderRepository) as T
             else -> throw IllegalArgumentException("Unknown ViewModel class")

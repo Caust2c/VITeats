@@ -71,6 +71,19 @@ class CartRepositoryTest {
     }
 
     @Test
+    fun testAddItemsBatchReorder() {
+        val repo = CartRepository()
+        val item1 = createMenuItem(201, "Veg Fried Rice", 100.0)
+        val item2 = createMenuItem(202, "Fresh Lime Soda", 40.0)
+
+        repo.addItems(listOf(item1 to 2, item2 to 1))
+        assertEquals(3, repo.totalItemCount)
+        assertEquals(240.0, repo.totalAmount, 0.001)
+        assertEquals(2, repo.getItemQuantity(201))
+        assertEquals(1, repo.getItemQuantity(202))
+    }
+
+    @Test
     fun testMealPeriodHelperFormatting() {
         assertEquals("1h 30m", MealPeriodHelper.formatDuration(90))
         assertEquals("2h", MealPeriodHelper.formatDuration(120))

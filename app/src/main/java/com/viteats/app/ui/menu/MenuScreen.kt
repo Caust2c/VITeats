@@ -44,6 +44,7 @@ fun MenuScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
     val cartItems by viewModel.cartItems.collectAsState()
+    val favouriteIds by viewModel.favouriteItemIds.collectAsState()
 
     val totalCartCount = remember(cartItems) { cartItems.sumOf { it.quantity } }
     val totalCartAmount = remember(cartItems) { cartItems.sumOf { it.lineTotal } }
@@ -124,7 +125,7 @@ fun MenuScreen(
                 }
                 is MenuState.Success -> {
                     val categories = remember(state.categories) {
-                        listOf("All") + state.categories.map { it.skname }.distinct()
+                        listOf("All", "Favourites") + state.categories.map { it.skname }.distinct()
                     }
 
                     LazyRow(
@@ -133,9 +134,17 @@ fun MenuScreen(
                     ) {
                         items(categories) { category ->
                             val isSelected = selectedCategory == category
+                            val isFavCategory = category == "Favourites"
+                            val pillBg = when {
+                                isSelected && isFavCategory -> SoftCoral
+                                isSelected -> MintGreen
+                                isFavCategory -> SoftCoral.copy(alpha = 0.6f)
+                                else -> NeobrutalWhite
+                            }
+
                             NeobrutalPill(
-                                text = category,
-                                backgroundColor = if (isSelected) MintGreen else NeobrutalWhite,
+                                text = if (isFavCategory) "♥ Favourites" else category,
+                                backgroundColor = pillBg,
                                 textColor = NeobrutalBlack,
                                 isSelected = isSelected,
                                 onClick = { viewModel.onCategorySelected(category) }
@@ -143,9 +152,13 @@ fun MenuScreen(
                         }
                     }
 
-                    val filteredItems = remember(state.items, selectedCategory, searchQuery) {
+                    val filteredItems = remember(state.items, selectedCategory, searchQuery, favouriteIds) {
                         state.items.filter { item ->
-                            val matchesCategory = selectedCategory == "All" || item.skudes.equals(selectedCategory, ignoreCase = true)
+                            val matchesCategory = when (selectedCategory) {
+                                "All" -> true
+                                "Favourites" -> favouriteIds.contains(item.meitid)
+                                else -> item.skudes.equals(selectedCategory, ignoreCase = true)
+                            }
                             val matchesQuery = searchQuery.isBlank() ||
                                     item.meitdes.contains(searchQuery, ignoreCase = true) ||
                                     item.dispname.contains(searchQuery, ignoreCase = true) ||
@@ -170,19 +183,28 @@ fun MenuScreen(
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.SearchOff,
+                                        imageVector = if (selectedCategory == "Favourites") Icons.Default.FavoriteBorder else Icons.Default.SearchOff,
                                         contentDescription = null,
                                         modifier = Modifier.size(48.dp),
-                                        tint = NeobrutalBlack
+                                        tint = if (selectedCategory == "Favourites") Color(0xFFEF4444) else NeobrutalBlack
                                     )
                                     Spacer(modifier = Modifier.height(12.dp))
                                     Text(
-                                        text = if (searchQuery.isNotBlank()) "No items found matching \"$searchQuery\""
+                                        text = if (selectedCategory == "Favourites") "No Favourites Yet"
+                                        else if (searchQuery.isNotBlank()) "No items found matching \"$searchQuery\""
                                         else "No items in this category",
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold,
                                         color = NeobrutalBlack
                                     )
+                                    if (selectedCategory == "Favourites") {
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        Text(
+                                            text = "Tap the heart icon on any food item to save your favorite dishes here.",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MutedText
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -199,9 +221,12 @@ fun MenuScreen(
                         ) {
                             items(filteredItems, key = { it.meitid }) { item ->
                                 val inCartQty = cartItems.find { it.item.meitid == item.meitid }?.quantity ?: 0
+                                val isFav = favouriteIds.contains(item.meitid)
                                 MenuItemCard(
                                     item = item,
                                     quantityInCart = inCartQty,
+                                    isFavourite = isFav,
+                                    onToggleFavourite = { viewModel.toggleFavourite(item) },
                                     onAddToCart = { viewModel.addToCart(item) },
                                     onDecrement = { viewModel.decrementItem(item) }
                                 )
@@ -311,6 +336,8 @@ fun MenuScreen(
 fun MenuItemCard(
     item: MenuItem,
     quantityInCart: Int = 0,
+    isFavourite: Boolean = false,
+    onToggleFavourite: () -> Unit = {},
     onAddToCart: () -> Unit = {},
     onDecrement: () -> Unit = {}
 ) {
@@ -329,7 +356,7 @@ fun MenuItemCard(
                 .fillMaxWidth()
                 .alpha(if (isOutOfStock) 0.65f else 1.0f)
         ) {
-            // Food Image with status overlay
+            // Food Image with status overlay & favorite button
             Box(
                 modifier = Modifier
                     .size(96.dp)
@@ -372,14 +399,36 @@ fun MenuItemCard(
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
-                    Text(
-                        text = item.meitdes,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Black,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        color = NeobrutalBlack
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Text(
+                            text = item.meitdes,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Black,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            color = NeobrutalBlack,
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        // Heart Toggle Button
+                        IconButton(
+                            onClick = onToggleFavourite,
+                            modifier = Modifier
+                                .size(28.dp)
+                                .offset(x = 4.dp, y = (-4).dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isFavourite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = if (isFavourite) "Remove favourite" else "Add favourite",
+                                tint = if (isFavourite) Color(0xFFEF4444) else NeobrutalBlack,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height(2.dp))
 

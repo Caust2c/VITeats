@@ -22,7 +22,8 @@ sealed class MenuState {
 
 class MenuViewModel(
     private val repository: MenuRepository,
-    private val cartRepository: CartRepository
+    private val cartRepository: CartRepository,
+    private val favouritesManager: com.viteats.app.data.FavouritesManager
 ) : ViewModel() {
     private val _menuState = MutableStateFlow<MenuState>(MenuState.Loading)
     val menuState: StateFlow<MenuState> = _menuState
@@ -35,12 +36,22 @@ class MenuViewModel(
 
     val cartItems: StateFlow<List<CartItem>> = cartRepository.cartItems
 
+    val favouriteItemIds: StateFlow<Set<Int>> = favouritesManager.favouriteItemIds
+
     fun onSearchQueryChanged(query: String) {
         _searchQuery.value = query
     }
 
     fun onCategorySelected(category: String) {
         _selectedCategory.value = category
+    }
+
+    fun toggleFavourite(item: MenuItem) {
+        favouritesManager.toggleFavourite(item.meitid)
+    }
+
+    fun isFavourite(item: MenuItem): Boolean {
+        return favouritesManager.isFavourite(item.meitid)
     }
 
     fun addToCart(item: MenuItem) {
