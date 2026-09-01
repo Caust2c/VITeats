@@ -338,7 +338,7 @@ fun MenuItemCard(
                     .border(BorderStroke(2.dp, NeobrutalBlack), RoundedCornerShape(12.dp))
             ) {
                 AsyncImage(
-                    model = com.viteats.app.util.FoodImageHelper.getImageUrl(item),
+                    model = item.imageUrl,
                     contentDescription = item.meitdes,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop

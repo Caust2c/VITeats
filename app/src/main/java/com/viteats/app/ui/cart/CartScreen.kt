@@ -286,7 +286,7 @@ fun CartScreen(
                                         .border(BorderStroke(2.dp, NeobrutalBlack), RoundedCornerShape(10.dp))
                                 ) {
                                     AsyncImage(
-                                        model = com.viteats.app.util.FoodImageHelper.getImageUrl(cartItem.item),
+                                        model = cartItem.item.imageUrl,
                                         contentDescription = cartItem.item.meitdes,
                                         modifier = Modifier.fillMaxSize(),
                                         contentScale = ContentScale.Crop
