@@ -18,6 +18,7 @@ class VITeatsApplication : Application(), ImageLoaderFactory {
     lateinit var orderRepository: OrderRepository
     lateinit var cartRepository: com.viteats.app.data.repository.CartRepository
     lateinit var favouritesManager: com.viteats.app.data.FavouritesManager
+    lateinit var themeManager: com.viteats.app.data.ThemeManager
 
     override fun onCreate() {
         super.onCreate()
@@ -29,6 +30,7 @@ class VITeatsApplication : Application(), ImageLoaderFactory {
         orderRepository = OrderRepository(api, sessionManager)
         cartRepository = com.viteats.app.data.repository.CartRepository()
         favouritesManager = com.viteats.app.data.FavouritesManager(this)
+        themeManager = com.viteats.app.data.ThemeManager(this)
     }
 
     override fun newImageLoader(): ImageLoader {

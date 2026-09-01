@@ -6,28 +6,31 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.RestaurantMenu
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.viteats.app.VITeatsApplication
 import com.viteats.app.data.SessionEvent
 import com.viteats.app.ui.ViewModelFactory
 import com.viteats.app.ui.auth.AuthViewModel
+import com.viteats.app.ui.components.NeobrutalButton
 import com.viteats.app.ui.menu.MenuScreen
 import com.viteats.app.ui.menu.MenuViewModel
 import com.viteats.app.ui.orders.OrdersScreen
 import com.viteats.app.ui.orders.OrdersViewModel
+import com.viteats.app.ui.settings.SettingsScreen
+import com.viteats.app.ui.settings.SettingsViewModel
 import com.viteats.app.ui.student.StudentScreen
 import com.viteats.app.ui.student.StudentViewModel
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.viteats.app.ui.components.NeobrutalButton
 import com.viteats.app.ui.theme.*
 import kotlinx.coroutines.flow.collectLatest
 
@@ -40,11 +43,17 @@ fun HomeScreen(
     authViewModel: AuthViewModel = viewModel(factory = ViewModelFactory(LocalContext.current.applicationContext as VITeatsApplication)),
     studentViewModel: StudentViewModel = viewModel(factory = ViewModelFactory(LocalContext.current.applicationContext as VITeatsApplication)),
     menuViewModel: MenuViewModel = viewModel(factory = ViewModelFactory(LocalContext.current.applicationContext as VITeatsApplication)),
-    ordersViewModel: OrdersViewModel = viewModel(factory = ViewModelFactory(LocalContext.current.applicationContext as VITeatsApplication))
+    ordersViewModel: OrdersViewModel = viewModel(factory = ViewModelFactory(LocalContext.current.applicationContext as VITeatsApplication)),
+    settingsViewModel: SettingsViewModel = viewModel(factory = ViewModelFactory(LocalContext.current.applicationContext as VITeatsApplication))
 ) {
     val context = LocalContext.current
     val app = context.applicationContext as VITeatsApplication
     var selectedTab by remember { mutableIntStateOf(0) }
+    val isDarkMode by settingsViewModel.isDarkMode.collectAsState()
+
+    val screenBg = if (isDarkMode) DarkCharcoalBg else LavenderBackground
+    val barBg = if (isDarkMode) DarkCardBg else NeobrutalWhite
+    val textPrimary = if (isDarkMode) DarkTextPrimary else NeobrutalBlack
 
     LaunchedEffect(Unit) {
         app.sessionManager.sessionEvents.collectLatest { event ->
@@ -55,7 +64,7 @@ fun HomeScreen(
     }
 
     Scaffold(
-        containerColor = LavenderBackground,
+        containerColor = screenBg,
         topBar = {
             Surface(
                 modifier = Modifier
@@ -68,7 +77,7 @@ fun HomeScreen(
                             strokeWidth = 3f
                         )
                     },
-                color = NeobrutalWhite
+                color = barBg
             ) {
                 Row(
                     modifier = Modifier
@@ -81,7 +90,7 @@ fun HomeScreen(
                         text = "VITeats",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Black,
-                        color = NeobrutalBlack,
+                        color = textPrimary,
                         letterSpacing = (-0.5).sp
                     )
 
@@ -126,10 +135,10 @@ fun HomeScreen(
                             strokeWidth = 4f
                         )
                     },
-                color = NeobrutalWhite
+                color = barBg
             ) {
                 NavigationBar(
-                    containerColor = NeobrutalWhite,
+                    containerColor = barBg,
                     tonalElevation = 0.dp
                 ) {
                     NavigationBarItem(
@@ -139,10 +148,10 @@ fun HomeScreen(
                         onClick = { selectedTab = 0 },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = NeobrutalBlack,
-                            selectedTextColor = NeobrutalBlack,
+                            selectedTextColor = textPrimary,
                             indicatorColor = MintGreen,
-                            unselectedIconColor = NeobrutalBlack.copy(alpha = 0.7f),
-                            unselectedTextColor = NeobrutalBlack.copy(alpha = 0.7f)
+                            unselectedIconColor = if (isDarkMode) DarkTextSecondary else NeobrutalBlack.copy(alpha = 0.7f),
+                            unselectedTextColor = if (isDarkMode) DarkTextSecondary else NeobrutalBlack.copy(alpha = 0.7f)
                         )
                     )
                     NavigationBarItem(
@@ -152,10 +161,10 @@ fun HomeScreen(
                         onClick = { selectedTab = 1 },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = NeobrutalBlack,
-                            selectedTextColor = NeobrutalBlack,
+                            selectedTextColor = textPrimary,
                             indicatorColor = PastelYellow,
-                            unselectedIconColor = NeobrutalBlack.copy(alpha = 0.7f),
-                            unselectedTextColor = NeobrutalBlack.copy(alpha = 0.7f)
+                            unselectedIconColor = if (isDarkMode) DarkTextSecondary else NeobrutalBlack.copy(alpha = 0.7f),
+                            unselectedTextColor = if (isDarkMode) DarkTextSecondary else NeobrutalBlack.copy(alpha = 0.7f)
                         )
                     )
                     NavigationBarItem(
@@ -165,10 +174,23 @@ fun HomeScreen(
                         onClick = { selectedTab = 2 },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = NeobrutalBlack,
-                            selectedTextColor = NeobrutalBlack,
+                            selectedTextColor = textPrimary,
                             indicatorColor = SoftCoral,
-                            unselectedIconColor = NeobrutalBlack.copy(alpha = 0.7f),
-                            unselectedTextColor = NeobrutalBlack.copy(alpha = 0.7f)
+                            unselectedIconColor = if (isDarkMode) DarkTextSecondary else NeobrutalBlack.copy(alpha = 0.7f),
+                            unselectedTextColor = if (isDarkMode) DarkTextSecondary else NeobrutalBlack.copy(alpha = 0.7f)
+                        )
+                    )
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Default.Settings, contentDescription = "Settings", modifier = Modifier.size(24.dp)) },
+                        label = { Text("Settings", fontWeight = if (selectedTab == 3) FontWeight.Black else FontWeight.Bold) },
+                        selected = selectedTab == 3,
+                        onClick = { selectedTab = 3 },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = NeobrutalBlack,
+                            selectedTextColor = textPrimary,
+                            indicatorColor = SoftCyan,
+                            unselectedIconColor = if (isDarkMode) DarkTextSecondary else NeobrutalBlack.copy(alpha = 0.7f),
+                            unselectedTextColor = if (isDarkMode) DarkTextSecondary else NeobrutalBlack.copy(alpha = 0.7f)
                         )
                     )
                 }
@@ -180,6 +202,7 @@ fun HomeScreen(
                 0 -> StudentScreen(viewModel = studentViewModel, onNavigateToTab = { selectedTab = it })
                 1 -> MenuScreen(viewModel = menuViewModel, onNavigateToCart = onNavigateToCart)
                 2 -> OrdersScreen(viewModel = ordersViewModel, onOrderClick = onOrderClick)
+                3 -> SettingsScreen(viewModel = settingsViewModel, onLogout = onLogout)
             }
         }
     }
@@ -190,6 +213,7 @@ fun HomeScreen(
             0 -> studentViewModel.fetchBalance()
             1 -> menuViewModel.fetchMenu()
             2 -> ordersViewModel.fetchOrders()
+            3 -> settingsViewModel.fetchStudentProfile()
         }
     }
 }

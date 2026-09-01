@@ -14,6 +14,12 @@ val NeobrutalBlack = Color(0xFF121212)
 val NeobrutalWhite = Color(0xFFFFFFFF)
 val MutedText = Color(0xFF4B5563)
 
+// Dark Mode Neobrutal Palette (Charcoal & Gray)
+val DarkCharcoalBg = Color(0xFF111827) // Tailwind gray-900
+val DarkCardBg = Color(0xFF1F2937)     // Tailwind gray-800
+val DarkTextPrimary = Color(0xFFF9FAFB)
+val DarkTextSecondary = Color(0xFF94A3B8)
+
 // Fallback Theme Colors
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)

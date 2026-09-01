@@ -45,6 +45,12 @@ fun MenuScreen(
     val selectedCategory by viewModel.selectedCategory.collectAsState()
     val cartItems by viewModel.cartItems.collectAsState()
     val favouriteIds by viewModel.favouriteItemIds.collectAsState()
+    val isDark = LocalDarkTheme.current
+
+    val screenBg = if (isDark) DarkCharcoalBg else LavenderBackground
+    val cardBg = if (isDark) DarkCardBg else NeobrutalWhite
+    val textPrimary = if (isDark) DarkTextPrimary else NeobrutalBlack
+    val textMuted = if (isDark) DarkTextSecondary else MutedText
 
     val totalCartCount = remember(cartItems) { cartItems.sumOf { it.quantity } }
     val totalCartAmount = remember(cartItems) { cartItems.sumOf { it.lineTotal } }
@@ -52,7 +58,7 @@ fun MenuScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(LavenderBackground)
+            .background(screenBg)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Neobrutal Search Bar
@@ -62,7 +68,7 @@ fun MenuScreen(
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 NeobrutalCard(
-                    backgroundColor = NeobrutalWhite,
+                    backgroundColor = cardBg,
                     borderColor = NeobrutalBlack,
                     borderWidth = 2.dp,
                     shadowOffset = 3.dp,
@@ -77,7 +83,7 @@ fun MenuScreen(
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = "Search",
-                            tint = NeobrutalBlack,
+                            tint = textPrimary,
                             modifier = Modifier.size(22.dp)
                         )
                         Spacer(modifier = Modifier.width(10.dp))
@@ -85,7 +91,7 @@ fun MenuScreen(
                             if (searchQuery.isEmpty()) {
                                 Text(
                                     text = "Search dishes, combos, outlets...",
-                                    color = MutedText,
+                                    color = textMuted,
                                     style = MaterialTheme.typography.bodyMedium
                                 )
                             }
@@ -94,7 +100,7 @@ fun MenuScreen(
                                 onValueChange = { viewModel.onSearchQueryChanged(it) },
                                 singleLine = true,
                                 textStyle = MaterialTheme.typography.bodyMedium.copy(
-                                    color = NeobrutalBlack,
+                                    color = textPrimary,
                                     fontWeight = FontWeight.Bold
                                 ),
                                 modifier = Modifier.fillMaxWidth()
@@ -108,7 +114,7 @@ fun MenuScreen(
                                 Icon(
                                     Icons.Default.Clear,
                                     contentDescription = "Clear",
-                                    tint = NeobrutalBlack,
+                                    tint = textPrimary,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -120,7 +126,7 @@ fun MenuScreen(
             when (val state = menuState) {
                 is MenuState.Loading -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = NeobrutalBlack)
+                        CircularProgressIndicator(color = if (isDark) PastelYellow else NeobrutalBlack)
                     }
                 }
                 is MenuState.Success -> {
@@ -135,12 +141,13 @@ fun MenuScreen(
                         items(categories) { category ->
                             val isSelected = selectedCategory == category
                             val isFavCategory = category == "Favourites"
-                            val pillBg = if (isSelected) MintGreen else NeobrutalWhite
+                            val pillBg = if (isSelected) MintGreen else cardBg
+                            val pillText = if (isSelected) NeobrutalBlack else textPrimary
 
                             NeobrutalPill(
                                 text = if (isFavCategory) "♥ Favourites" else category,
                                 backgroundColor = pillBg,
-                                textColor = NeobrutalBlack,
+                                textColor = pillText,
                                 isSelected = isSelected,
                                 onClick = { viewModel.onCategorySelected(category) }
                             )
@@ -337,9 +344,14 @@ fun MenuItemCard(
     onDecrement: () -> Unit = {}
 ) {
     val isOutOfStock = item.StockQty <= 0
+    val isDark = LocalDarkTheme.current
+
+    val cardBg = if (isDark) DarkCardBg else NeobrutalWhite
+    val textPrimary = if (isDark) DarkTextPrimary else NeobrutalBlack
+    val textMuted = if (isDark) DarkTextSecondary else MutedText
 
     NeobrutalCard(
-        backgroundColor = if (isOutOfStock) NeobrutalWhite.copy(alpha = 0.8f) else NeobrutalWhite,
+        backgroundColor = if (isOutOfStock) cardBg.copy(alpha = 0.8f) else cardBg,
         borderColor = NeobrutalBlack,
         borderWidth = 2.dp,
         shadowOffset = if (isOutOfStock) 2.dp else 4.dp,
@@ -356,7 +368,7 @@ fun MenuItemCard(
                 modifier = Modifier
                     .size(96.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(LavenderBackground)
+                    .background(if (isDark) Color(0xFF374151) else LavenderBackground)
                     .border(BorderStroke(2.dp, NeobrutalBlack), RoundedCornerShape(12.dp))
             ) {
                 AsyncImage(
@@ -405,7 +417,7 @@ fun MenuItemCard(
                             fontWeight = FontWeight.Black,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
-                            color = NeobrutalBlack,
+                            color = textPrimary,
                             modifier = Modifier.weight(1f)
                         )
 
@@ -419,7 +431,7 @@ fun MenuItemCard(
                             Icon(
                                 imageVector = if (isFavourite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                                 contentDescription = if (isFavourite) "Remove favourite" else "Add favourite",
-                                tint = if (isFavourite) Color(0xFFEF4444) else NeobrutalBlack,
+                                tint = if (isFavourite) Color(0xFFEF4444) else textPrimary,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -431,7 +443,7 @@ fun MenuItemCard(
                         text = "${item.dispname} · ${item.skudes}",
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Medium,
-                        color = MutedText
+                        color = textMuted
                     )
 
                     Row(

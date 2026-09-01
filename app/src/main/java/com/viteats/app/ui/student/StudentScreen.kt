@@ -34,6 +34,11 @@ fun StudentScreen(
 ) {
     val balanceState by viewModel.balanceState.collectAsState()
     val scrollState = rememberScrollState()
+    val isDark = LocalDarkTheme.current
+
+    val screenBg = if (isDark) DarkCharcoalBg else LavenderBackground
+    val cardBg = if (isDark) DarkCardBg else NeobrutalWhite
+    val textPrimary = if (isDark) DarkTextPrimary else NeobrutalBlack
 
     var mealStatus by remember { mutableStateOf(MealPeriodHelper.getCurrentMealStatus()) }
 
@@ -44,7 +49,7 @@ fun StudentScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(LavenderBackground)
+            .background(screenBg)
             .verticalScroll(scrollState)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp)
@@ -55,7 +60,7 @@ fun StudentScreen(
                 text = "VITeats",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Black,
-                color = NeobrutalBlack,
+                color = textPrimary,
                 letterSpacing = (-0.5).sp
             )
 
@@ -170,7 +175,7 @@ fun StudentScreen(
 
                 // --- White Card for "Account Details" ---
                 NeobrutalCard(
-                    backgroundColor = NeobrutalWhite,
+                    backgroundColor = cardBg,
                     borderColor = NeobrutalBlack,
                     borderWidth = 2.5.dp,
                     shadowOffset = 5.dp,
@@ -184,7 +189,7 @@ fun StudentScreen(
                             text = "Account Details",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Black,
-                            color = NeobrutalBlack
+                            color = textPrimary
                         )
 
                         Spacer(modifier = Modifier.height(2.dp))
@@ -244,6 +249,9 @@ fun NeobrutalDetailRow(
     label: String,
     value: String
 ) {
+    val isDark = LocalDarkTheme.current
+    val textPrimary = if (isDark) DarkTextPrimary else NeobrutalBlack
+
     val breakableValue = remember(value) {
         value.replace("@", "@\u200B")
     }
@@ -261,14 +269,14 @@ fun NeobrutalDetailRow(
                 imageVector = icon,
                 contentDescription = label,
                 modifier = Modifier.size(20.dp),
-                tint = NeobrutalBlack
+                tint = textPrimary
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Bold,
-                color = NeobrutalBlack,
+                color = textPrimary,
                 fontSize = 13.5.sp
             )
         }
@@ -279,7 +287,7 @@ fun NeobrutalDetailRow(
                 lineBreak = androidx.compose.ui.text.style.LineBreak.Simple
             ),
             fontWeight = FontWeight.SemiBold,
-            color = NeobrutalBlack,
+            color = textPrimary,
             fontSize = 13.5.sp,
             textAlign = androidx.compose.ui.text.style.TextAlign.End,
             modifier = Modifier.weight(1f),

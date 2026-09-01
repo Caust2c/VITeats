@@ -39,6 +39,11 @@ import java.util.*
 fun OrdersScreen(viewModel: OrdersViewModel, onOrderClick: (String) -> Unit) {
     val ordersState by viewModel.ordersState.collectAsState()
     var reorderToastMessage by remember { mutableStateOf<String?>(null) }
+    val isDark = LocalDarkTheme.current
+
+    val screenBg = if (isDark) DarkCharcoalBg else LavenderBackground
+    val cardBg = if (isDark) DarkCardBg else NeobrutalWhite
+    val textPrimary = if (isDark) DarkTextPrimary else NeobrutalBlack
 
     LaunchedEffect(Unit) {
         viewModel.reorderMessage.collectLatest { msg ->
@@ -51,13 +56,13 @@ fun OrdersScreen(viewModel: OrdersViewModel, onOrderClick: (String) -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(LavenderBackground)
+            .background(screenBg)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             when (val state = ordersState) {
                 is OrdersState.Loading -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = NeobrutalBlack)
+                        CircularProgressIndicator(color = if (isDark) PastelYellow else NeobrutalBlack)
                     }
                 }
                 is OrdersState.Success -> {
@@ -69,7 +74,7 @@ fun OrdersScreen(viewModel: OrdersViewModel, onOrderClick: (String) -> Unit) {
                             contentAlignment = Alignment.Center
                         ) {
                             NeobrutalCard(
-                                backgroundColor = NeobrutalWhite,
+                                backgroundColor = cardBg,
                                 shadowOffset = 5.dp
                             ) {
                                 Column(
@@ -223,6 +228,12 @@ fun OrderListItem(
 ) {
     val qrAvailable = isQrAvailable(order)
     var isExpanded by remember { mutableStateOf(false) }
+    val isDark = LocalDarkTheme.current
+
+    val cardBg = if (isDark) DarkCardBg else NeobrutalWhite
+    val textPrimary = if (isDark) DarkTextPrimary else NeobrutalBlack
+    val textMuted = if (isDark) DarkTextSecondary else MutedText
+    val accordionBg = if (isDark) Color(0xFF374151) else LavenderCard
 
     // Parse items list and formatted summary
     val parsedItems = remember(order.sname) {
@@ -235,7 +246,7 @@ fun OrderListItem(
     }
 
     NeobrutalCard(
-        backgroundColor = NeobrutalWhite,
+        backgroundColor = cardBg,
         borderColor = NeobrutalBlack,
         borderWidth = 2.dp,
         shadowOffset = 4.dp,
@@ -258,13 +269,13 @@ fun OrderListItem(
                     Text(
                         text = order.OrderDate,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MutedText,
+                        color = textMuted,
                         fontWeight = FontWeight.SemiBold
                     )
                     Text(
                         text = "Order #${order.OrderId}",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MutedText,
+                        color = textMuted,
                         fontWeight = FontWeight.Medium
                     )
                 }
@@ -283,16 +294,16 @@ fun OrderListItem(
                         text = if (order.sname.isNotBlank()) order.sname else "Mess Order",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Black,
-                        color = NeobrutalBlack
+                        color = textPrimary
                     )
 
                     Spacer(modifier = Modifier.height(2.dp))
 
-                    // Truncated Order Summary string (replaces orderee name)
+                    // Truncated Order Summary string
                     Text(
                         text = summaryText,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MutedText,
+                        color = textMuted,
                         fontWeight = FontWeight.Medium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -305,7 +316,7 @@ fun OrderListItem(
                     text = "₹${order.NetAmount.toInt()}",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Black,
-                    color = NeobrutalBlack
+                    color = textPrimary
                 )
             }
 
