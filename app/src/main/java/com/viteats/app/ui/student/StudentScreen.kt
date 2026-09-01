@@ -246,10 +246,10 @@ fun NeobrutalDetailRow(
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.Top
     ) {
-        // Left Side: Group icon and bold label
+        // Left Side: Group icon and bold label at natural width
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -259,7 +259,7 @@ fun NeobrutalDetailRow(
                 modifier = Modifier.size(20.dp),
                 tint = NeobrutalBlack
             )
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(6.dp))
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodySmall,
@@ -269,9 +269,7 @@ fun NeobrutalDetailRow(
             )
         }
 
-        Spacer(modifier = Modifier.width(16.dp))
-
-        // Right Side: Value text right-aligned with clean paragraph wrapping
+        // Right Side: Fills all remaining space (flex-1), text-right, and breaks words cleanly
         Text(
             text = value,
             style = MaterialTheme.typography.bodySmall.copy(
