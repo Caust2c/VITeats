@@ -73,64 +73,45 @@ fun SettingsScreen(
             shadowOffset = 4.dp,
             cornerRadius = 16.dp
         ) {
-            Column(
-                modifier = Modifier.padding(18.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(18.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (isDarkMode) PastelYellow else SoftCyan)
+                            .border(2.dp, NeobrutalBlack, RoundedCornerShape(10.dp)),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(if (isDarkMode) PastelYellow else SoftCyan)
-                                .border(2.dp, NeobrutalBlack, RoundedCornerShape(10.dp)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = if (isDarkMode) Icons.Default.DarkMode else Icons.Default.LightMode,
-                                contentDescription = null,
-                                tint = NeobrutalBlack,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
-
-                        Column {
-                            Text(
-                                text = "Dark Mode",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Black,
-                                color = textPrimary
-                            )
-                            Text(
-                                text = if (isDarkMode) "Deep Charcoal Theme" else "Pastel Lavender Theme",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = textMuted
-                            )
-                        }
+                        Icon(
+                            imageVector = if (isDarkMode) Icons.Default.DarkMode else Icons.Default.LightMode,
+                            contentDescription = null,
+                            tint = NeobrutalBlack,
+                            modifier = Modifier.size(22.dp)
+                        )
                     }
 
-                    // Neobrutalist Interactive Toggle Switch
-                    NeobrutalSwitch(
-                        checked = isDarkMode,
-                        onCheckedChange = { viewModel.setDarkMode(it) }
+                    Text(
+                        text = "Dark Mode",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Black,
+                        color = textPrimary
                     )
                 }
 
-                HorizontalDivider(color = NeobrutalBlack.copy(alpha = 0.15f), thickness = 1.dp)
-
-                Text(
-                    text = "Swaps pastel backgrounds for deep charcoal while keeping vibrant yellow, mint, and coral accents with crisp black drop shadows.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = textMuted,
-                    lineHeight = 18.sp
+                // Neobrutalist Interactive Toggle Switch
+                NeobrutalSwitch(
+                    checked = isDarkMode,
+                    onCheckedChange = { viewModel.setDarkMode(it) }
                 )
             }
         }
