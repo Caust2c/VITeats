@@ -237,7 +237,9 @@ fun AuthScreen(
                         borderWidth = 2.dp,
                         shadowOffset = 4.dp,
                         cornerRadius = 14.dp,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
                         enabled = authState !is AuthState.Loading,
                         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 14.dp)
                     ) {
