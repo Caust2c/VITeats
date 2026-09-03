@@ -9,8 +9,11 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.Email
@@ -27,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -175,18 +179,140 @@ fun StudentScreen(
                     }
                 }
 
+                // Collect dynamic allocation & spending from ViewModel
+                val initialMonthlyAllocation by viewModel.initialMonthlyAllocation.collectAsState()
+                val currentSpending by viewModel.currentSpending.collectAsState()
+                val isMonthRolledOver by viewModel.isMonthRolledOver.collectAsState()
+
+                var allocationInputText by remember { mutableStateOf("") }
+                var isEditingAllocation by remember { mutableStateOf(false) }
+
+                // --- Monthly Rollover or Unset Allocation Prompt Card ---
+                if (isMonthRolledOver || initialMonthlyAllocation <= 0.0 || isEditingAllocation) {
+                    NeobrutalCard(
+                        backgroundColor = if (isMonthRolledOver) PastelYellow else cardBg,
+                        borderColor = NeobrutalBlack,
+                        borderWidth = 2.5.dp,
+                        shadowOffset = 5.dp,
+                        cornerRadius = 20.dp
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(20.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(34.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(if (isMonthRolledOver) NeobrutalWhite else PastelYellow)
+                                            .border(1.5.dp, NeobrutalBlack, RoundedCornerShape(8.dp)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.CalendarMonth,
+                                            contentDescription = null,
+                                            tint = NeobrutalBlack,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+
+                                    Text(
+                                        text = if (isMonthRolledOver) "New Month Started!"
+                                        else if (initialMonthlyAllocation <= 0.0) "Set Monthly Allocation"
+                                        else "Update Monthly Allocation",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Black,
+                                        color = if (isMonthRolledOver) NeobrutalBlack else textPrimary
+                                    )
+                                }
+
+                                if (initialMonthlyAllocation > 0.0 && isEditingAllocation && !isMonthRolledOver) {
+                                    TextButton(onClick = { isEditingAllocation = false }) {
+                                        Text("Cancel", fontWeight = FontWeight.Bold, color = textMuted)
+                                    }
+                                }
+                            }
+
+                            Text(
+                                text = "Managers assign your wallet allowance at the start of each month. Input your starting allocation (e.g., ₹9000) to accurately calculate your real spending.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (isMonthRolledOver) NeobrutalBlack.copy(alpha = 0.8f) else textMuted,
+                                lineHeight = 18.sp
+                            )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                OutlinedTextField(
+                                    value = allocationInputText,
+                                    onValueChange = { input ->
+                                        allocationInputText = input.filter { it.isDigit() || it == '.' }
+                                    },
+                                    placeholder = {
+                                        Text(
+                                            text = if (initialMonthlyAllocation > 0) "₹${initialMonthlyAllocation.toInt()}" else "e.g. 9000",
+                                            color = Color(0xFF64748B)
+                                        )
+                                    },
+                                    prefix = { Text("₹", fontWeight = FontWeight.Bold, color = textPrimary) },
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedTextColor = textPrimary,
+                                        unfocusedTextColor = textPrimary,
+                                        focusedBorderColor = NeobrutalBlack,
+                                        unfocusedBorderColor = NeobrutalBlack.copy(alpha = 0.6f),
+                                        focusedContainerColor = if (isDark) Color(0xFF374151) else LavenderCard,
+                                        unfocusedContainerColor = if (isDark) Color(0xFF374151) else LavenderCard
+                                    ),
+                                    modifier = Modifier.weight(1f)
+                                )
+
+                                NeobrutalButton(
+                                    onClick = {
+                                        val entered = allocationInputText.toDoubleOrNull()
+                                        if (entered != null && entered > 0) {
+                                            viewModel.setInitialMonthlyAllocation(entered)
+                                            allocationInputText = ""
+                                            isEditingAllocation = false
+                                        }
+                                    },
+                                    backgroundColor = MintGreen,
+                                    contentColor = NeobrutalBlack,
+                                    borderColor = NeobrutalBlack,
+                                    borderWidth = 2.dp,
+                                    shadowOffset = 2.dp,
+                                    cornerRadius = 10.dp,
+                                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 14.dp)
+                                ) {
+                                    Text(
+                                        text = "Set Allocation",
+                                        fontWeight = FontWeight.Black,
+                                        style = MaterialTheme.typography.labelLarge
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // --- Budget Tracking Card ---
                 val remainingBudget = balance.bal
-                val totalBudget = remember(balance.bal) {
-                    if (balance.bal > 0) {
-                        val base = ((balance.bal / 1000).toInt() + 2) * 1000.0
-                        maxOf(base, 5000.0)
-                    } else 5000.0
-                }
-                val spentBudget = (totalBudget - remainingBudget).coerceAtLeast(0.0)
-                val budgetProgress = if (totalBudget > 0) {
-                    ((totalBudget - remainingBudget) / totalBudget).toFloat().coerceIn(0.06f, 1.0f)
-                } else 0.5f
+                val budgetProgress = if (initialMonthlyAllocation > 0) {
+                    (currentSpending / initialMonthlyAllocation).toFloat().coerceIn(0f, 1f)
+                } else 0f
 
                 val calendar = remember { Calendar.getInstance() }
                 val daysInMonth = remember(calendar) { calendar.getActualMaximum(Calendar.DAY_OF_MONTH) }
@@ -219,12 +345,32 @@ fun StudentScreen(
                                 color = textPrimary
                             )
 
-                            NeobrutalPill(
-                                text = "This Month",
-                                backgroundColor = PastelYellow,
-                                textColor = NeobrutalBlack,
-                                isSelected = false
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                if (initialMonthlyAllocation > 0.0 && !isEditingAllocation) {
+                                    IconButton(
+                                        onClick = { isEditingAllocation = true },
+                                        modifier = Modifier.size(28.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Edit,
+                                            contentDescription = "Edit Allocation",
+                                            tint = textPrimary,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+
+                                NeobrutalPill(
+                                    text = if (initialMonthlyAllocation > 0) "₹${initialMonthlyAllocation.toInt()} Limit" else "Set Limit",
+                                    backgroundColor = PastelYellow,
+                                    textColor = NeobrutalBlack,
+                                    isSelected = false,
+                                    onClick = { isEditingAllocation = !isEditingAllocation }
+                                )
+                            }
                         }
 
                         // Horizontal Progress Bar with Thick Black Border & Vibrant Green Fill
@@ -236,21 +382,23 @@ fun StudentScreen(
                                 .background(if (isDark) Color(0xFF374151) else Color(0xFFE2E8F0))
                                 .border(BorderStroke(2.5.dp, NeobrutalBlack), RoundedCornerShape(11.dp))
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth(budgetProgress)
-                                    .fillMaxHeight()
-                                    .clip(
-                                        RoundedCornerShape(
-                                            topStart = 9.dp,
-                                            bottomStart = 9.dp,
-                                            topEnd = if (budgetProgress >= 0.95f) 9.dp else 0.dp,
-                                            bottomEnd = if (budgetProgress >= 0.95f) 9.dp else 0.dp
+                            if (budgetProgress > 0f) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth(budgetProgress)
+                                        .fillMaxHeight()
+                                        .clip(
+                                            RoundedCornerShape(
+                                                topStart = 9.dp,
+                                                bottomStart = 9.dp,
+                                                topEnd = if (budgetProgress >= 0.95f) 9.dp else 0.dp,
+                                                bottomEnd = if (budgetProgress >= 0.95f) 9.dp else 0.dp
+                                            )
                                         )
-                                    )
-                                    .background(Color(0xFF22C55E)) // Vibrant green
-                                    .border(BorderStroke(1.dp, NeobrutalBlack))
-                            )
+                                        .background(Color(0xFF22C55E)) // Vibrant green
+                                        .border(BorderStroke(1.dp, NeobrutalBlack))
+                                )
+                            }
                         }
 
                         // Text Row Dynamically Displaying Remaining Budget
@@ -267,7 +415,11 @@ fun StudentScreen(
                             )
 
                             Text(
-                                text = "₹${spentBudget.toInt()} / ₹${totalBudget.toInt()}",
+                                text = if (initialMonthlyAllocation > 0) {
+                                    "₹${currentSpending.toInt()} Spent / ₹${initialMonthlyAllocation.toInt()}"
+                                } else {
+                                    "₹${currentSpending.toInt()} Spent (Set Allocation)"
+                                },
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = textMuted
@@ -314,15 +466,23 @@ fun StudentScreen(
                     }
                 }
 
-                // --- Expense Breakdown Card ---
-                val expenseCategories = remember(balance.bal) {
-                    val baseSpent = if (balance.bal > 0) maxOf(balance.bal * 1.5, 3000.0) else 3750.0
-                    listOf(
-                        ExpenseCategory("Lunch", baseSpent * 0.42, MintGreen),
-                        ExpenseCategory("Dinner", baseSpent * 0.30, SoftCyan),
-                        ExpenseCategory("Snacks", baseSpent * 0.18, PastelYellow),
-                        ExpenseCategory("Breakfast", baseSpent * 0.10, SoftCoral)
-                    )
+                // --- Expense Breakdown Card (Dynamic Spent Calculation) ---
+                val expenseCategories = remember(currentSpending) {
+                    if (currentSpending > 0) {
+                        listOf(
+                            ExpenseCategory("Lunch", currentSpending * 0.42, MintGreen),
+                            ExpenseCategory("Dinner", currentSpending * 0.30, SoftCyan),
+                            ExpenseCategory("Snacks", currentSpending * 0.18, PastelYellow),
+                            ExpenseCategory("Breakfast", currentSpending * 0.10, SoftCoral)
+                        )
+                    } else {
+                        listOf(
+                            ExpenseCategory("Lunch", 0.0, MintGreen),
+                            ExpenseCategory("Dinner", 0.0, SoftCyan),
+                            ExpenseCategory("Snacks", 0.0, PastelYellow),
+                            ExpenseCategory("Breakfast", 0.0, SoftCoral)
+                        )
+                    }
                 }
 
                 NeobrutalCard(
@@ -375,7 +535,7 @@ fun StudentScreen(
                                         color = textMuted
                                     )
                                     Text(
-                                        text = "₹${expenseCategories.sumOf { it.amount }.toInt()}",
+                                        text = "₹${currentSpending.toInt()}",
                                         style = MaterialTheme.typography.labelLarge,
                                         fontWeight = FontWeight.Black,
                                         color = textPrimary

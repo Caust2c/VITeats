@@ -16,7 +16,7 @@ class ViewModelFactory(private val application: VITeatsApplication) : ViewModelP
             modelClass.isAssignableFrom(AuthViewModel::class.java) -> 
                 AuthViewModel(application.authRepository) as T
             modelClass.isAssignableFrom(StudentViewModel::class.java) ->
-                StudentViewModel(application.studentRepository) as T
+                StudentViewModel(application.studentRepository, application.budgetManager) as T
             modelClass.isAssignableFrom(MenuViewModel::class.java) ->
                 MenuViewModel(application.menuRepository, application.cartRepository, application.favouritesManager) as T
             modelClass.isAssignableFrom(OrdersViewModel::class.java) ->

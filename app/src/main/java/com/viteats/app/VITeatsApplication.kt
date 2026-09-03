@@ -19,6 +19,7 @@ class VITeatsApplication : Application(), ImageLoaderFactory {
     lateinit var cartRepository: com.viteats.app.data.repository.CartRepository
     lateinit var favouritesManager: com.viteats.app.data.FavouritesManager
     lateinit var themeManager: com.viteats.app.data.ThemeManager
+    lateinit var budgetManager: com.viteats.app.data.BudgetManager
 
     override fun onCreate() {
         super.onCreate()
@@ -31,6 +32,7 @@ class VITeatsApplication : Application(), ImageLoaderFactory {
         cartRepository = com.viteats.app.data.repository.CartRepository()
         favouritesManager = com.viteats.app.data.FavouritesManager(this)
         themeManager = com.viteats.app.data.ThemeManager(this)
+        budgetManager = com.viteats.app.data.BudgetManager(this)
     }
 
     override fun newImageLoader(): ImageLoader {
