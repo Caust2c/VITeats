@@ -40,7 +40,10 @@ import com.viteats.app.ui.components.NeobrutalPill
 import com.viteats.app.ui.theme.*
 import com.viteats.app.util.MealPeriodHelper
 import com.viteats.app.util.MealType
+import java.time.LocalDate
+import java.time.YearMonth
 import java.util.Calendar
+import java.util.Locale
 
 @Composable
 fun StudentScreen(
@@ -198,56 +201,38 @@ fun StudentScreen(
                     ) {
                         Column(
                             modifier = Modifier.padding(20.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            verticalArrangement = Arrangement.spacedBy(14.dp)
                         ) {
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                                modifier = Modifier.wrapContentWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                Box(
+                                    modifier = Modifier
+                                        .size(34.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(if (isMonthRolledOver) NeobrutalWhite else PastelYellow)
+                                        .border(1.5.dp, NeobrutalBlack, RoundedCornerShape(8.dp)),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(34.dp)
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .background(if (isMonthRolledOver) NeobrutalWhite else PastelYellow)
-                                            .border(1.5.dp, NeobrutalBlack, RoundedCornerShape(8.dp)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.CalendarMonth,
-                                            contentDescription = null,
-                                            tint = NeobrutalBlack,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    }
-
-                                    Text(
-                                        text = if (isMonthRolledOver) "New Month Started!"
-                                        else if (initialMonthlyAllocation <= 0.0) "Set Monthly Allocation"
-                                        else "Update Monthly Allocation",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Black,
-                                        color = if (isMonthRolledOver) NeobrutalBlack else textPrimary
+                                    Icon(
+                                        imageVector = Icons.Default.CalendarMonth,
+                                        contentDescription = null,
+                                        tint = NeobrutalBlack,
+                                        modifier = Modifier.size(18.dp)
                                     )
                                 }
 
-                                if (initialMonthlyAllocation > 0.0 && isEditingAllocation && !isMonthRolledOver) {
-                                    TextButton(onClick = { isEditingAllocation = false }) {
-                                        Text("Cancel", fontWeight = FontWeight.Bold, color = textMuted)
-                                    }
-                                }
+                                Text(
+                                    text = if (isMonthRolledOver) "New Month Started!"
+                                    else if (initialMonthlyAllocation <= 0.0) "Set Monthly Allocation"
+                                    else "Update Monthly Allocation",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Black,
+                                    color = if (isMonthRolledOver) NeobrutalBlack else textPrimary
+                                )
                             }
-
-                            Text(
-                                text = "Managers assign your wallet allowance at the start of each month. Input your starting allocation (e.g., ₹9000) to accurately calculate your real spending.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = if (isMonthRolledOver) NeobrutalBlack.copy(alpha = 0.8f) else textMuted,
-                                lineHeight = 18.sp
-                            )
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -261,7 +246,7 @@ fun StudentScreen(
                                     },
                                     placeholder = {
                                         Text(
-                                            text = if (initialMonthlyAllocation > 0) "₹${initialMonthlyAllocation.toInt()}" else "e.g. 9000",
+                                            text = if (initialMonthlyAllocation > 0) "${initialMonthlyAllocation.toInt()}" else "9000",
                                             color = Color(0xFF64748B)
                                         )
                                     },
@@ -314,12 +299,14 @@ fun StudentScreen(
                     (currentSpending / initialMonthlyAllocation).toFloat().coerceIn(0f, 1f)
                 } else 0f
 
-                val calendar = remember { Calendar.getInstance() }
-                val daysInMonth = remember(calendar) { calendar.getActualMaximum(Calendar.DAY_OF_MONTH) }
-                val currentDay = remember(calendar) { calendar.get(Calendar.DAY_OF_MONTH) }
-                val remainingDays = remember(daysInMonth, currentDay) { (daysInMonth - currentDay + 1).coerceAtLeast(1) }
-                val perDayAmount = remember(remainingBudget, remainingDays) {
-                    (remainingBudget / remainingDays).toInt().coerceAtLeast(0)
+                val remainingDaysInMonth = remember {
+                    (YearMonth.now().lengthOfMonth() - LocalDate.now().dayOfMonth + 1).coerceAtLeast(1)
+                }
+                val dailyAllowableSpend = remember(remainingBudget, remainingDaysInMonth) {
+                    if (remainingDaysInMonth > 0) (remainingBudget / remainingDaysInMonth).coerceAtLeast(0.0) else 0.0
+                }
+                val formattedDailySpend = remember(dailyAllowableSpend) {
+                    String.format(Locale.getDefault(), "%.2f", dailyAllowableSpend)
                 }
 
                 NeobrutalCard(
@@ -345,32 +332,13 @@ fun StudentScreen(
                                 color = textPrimary
                             )
 
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                if (initialMonthlyAllocation > 0.0 && !isEditingAllocation) {
-                                    IconButton(
-                                        onClick = { isEditingAllocation = true },
-                                        modifier = Modifier.size(28.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Edit,
-                                            contentDescription = "Edit Allocation",
-                                            tint = textPrimary,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-                                }
-
-                                NeobrutalPill(
-                                    text = if (initialMonthlyAllocation > 0) "₹${initialMonthlyAllocation.toInt()} Limit" else "Set Limit",
-                                    backgroundColor = PastelYellow,
-                                    textColor = NeobrutalBlack,
-                                    isSelected = false,
-                                    onClick = { isEditingAllocation = !isEditingAllocation }
-                                )
-                            }
+                            NeobrutalPill(
+                                text = if (initialMonthlyAllocation > 0) "₹${initialMonthlyAllocation.toInt()} Limit" else "Set Limit",
+                                backgroundColor = PastelYellow,
+                                textColor = NeobrutalBlack,
+                                isSelected = false,
+                                onClick = { isEditingAllocation = !isEditingAllocation }
+                            )
                         }
 
                         // Horizontal Progress Bar with Thick Black Border & Vibrant Green Fill
@@ -456,7 +424,7 @@ fun StudentScreen(
                                 }
 
                                 Text(
-                                    text = "You can spend ₹$perDayAmount per day for the rest of the month",
+                                    text = "You can spend ₹$formattedDailySpend per day for the rest of the month",
                                     style = MaterialTheme.typography.labelLarge,
                                     fontWeight = FontWeight.Black,
                                     color = NeobrutalBlack
@@ -510,6 +478,7 @@ fun StudentScreen(
 
                             NeobrutalPill(
                                 text = "Meal Stats",
+                                modifier = Modifier.padding(top = 12.dp),
                                 backgroundColor = SoftCyan,
                                 textColor = NeobrutalBlack,
                                 isSelected = false
