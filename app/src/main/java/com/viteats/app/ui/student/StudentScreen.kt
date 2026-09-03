@@ -1,23 +1,34 @@
 package com.viteats.app.ui.student
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.RestaurantMenu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.viteats.app.ui.components.NeobrutalButton
@@ -127,7 +138,15 @@ fun StudentScreen(
                             letterSpacing = (-1).sp
                         )
 
-                        Spacer(modifier = Modifier.height(18.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        // --- Budget Management Component ---
+                        BudgetManagementSection(
+                            currentSpending = 2450.0,
+                            initialBudget = 3000.0
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -286,5 +305,181 @@ fun NeobrutalDetailRow(
         )
     }
 }
+
+@Composable
+fun BudgetManagementSection(
+    currentSpending: Double = 2450.0,
+    initialBudget: Double = 3000.0
+) {
+    val context = LocalContext.current
+    val prefs = remember { context.getSharedPreferences("viteats_budget_prefs", android.content.Context.MODE_PRIVATE) }
+
+    var budgetInput by rememberSaveable {
+        mutableStateOf(prefs.getString("monthly_budget", initialBudget.toInt().toString()) ?: "3000")
+    }
+
+    val budgetAmount = budgetInput.toDoubleOrNull() ?: initialBudget
+    val spendingRatio = if (budgetAmount > 0) (currentSpending / budgetAmount).toFloat() else 0f
+    val spendingPercentage = (spendingRatio * 100f).coerceAtLeast(0f)
+    val isApproachingLimit = spendingPercentage >= 80f
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        HorizontalDivider(color = NeobrutalBlack.copy(alpha = 0.2f), thickness = 1.5.dp)
+
+        // Title and Spending Summary
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AccountBalanceWallet,
+                    contentDescription = null,
+                    tint = NeobrutalBlack,
+                    modifier = Modifier.size(18.dp)
+                )
+                Text(
+                    text = "Monthly Spending",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Black,
+                    color = NeobrutalBlack
+                )
+            }
+
+            Text(
+                text = "₹${"%.0f".format(currentSpending)} / ₹${"%.0f".format(budgetAmount)}",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Black,
+                color = if (isApproachingLimit) Color(0xFFDC2626) else NeobrutalBlack
+            )
+        }
+
+        // Neobrutalist Progress Bar
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(16.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(NeobrutalWhite)
+                .border(BorderStroke(2.dp, NeobrutalBlack), RoundedCornerShape(8.dp))
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(spendingRatio.coerceIn(0f, 1f))
+                    .fillMaxHeight()
+                    .background(if (isApproachingLimit) Color(0xFFEF4444) else MintGreen)
+            )
+        }
+
+        // Interactive Input Field: Set Monthly Budget Limit with Thick Black Border
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "Monthly Limit (₹):",
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Bold,
+                color = NeobrutalBlack
+            )
+
+            // Styled interactive input field with thick black border
+            Box(
+                modifier = Modifier
+                    .width(130.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(NeobrutalWhite)
+                    .border(BorderStroke(2.dp, NeobrutalBlack), RoundedCornerShape(8.dp))
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
+            ) {
+                BasicTextField(
+                    value = budgetInput,
+                    onValueChange = { newValue ->
+                        val filtered = newValue.filter { it.isDigit() }.take(6)
+                        budgetInput = filtered
+                        prefs.edit().putString("monthly_budget", filtered).apply()
+                    },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number
+                    ),
+                    textStyle = TextStyle(
+                        fontWeight = FontWeight.Black,
+                        fontSize = 14.sp,
+                        color = NeobrutalBlack
+                    ),
+                    decorationBox = { innerTextField ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "₹ ",
+                                fontWeight = FontWeight.Black,
+                                fontSize = 14.sp,
+                                color = NeobrutalBlack
+                            )
+                            if (budgetInput.isEmpty()) {
+                                Text(
+                                    text = "3000",
+                                    color = Color.Gray,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            innerTextField()
+                        }
+                    }
+                )
+            }
+        }
+
+        // Conditional Warning Banner (>= 80% of budget)
+        if (isApproachingLimit) {
+            NeobrutalCard(
+                backgroundColor = Color(0xFFEF4444),
+                borderColor = NeobrutalBlack,
+                borderWidth = 2.dp,
+                shadowOffset = 3.dp,
+                cornerRadius = 10.dp
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = "Warning",
+                        tint = Color.White,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Column {
+                        Text(
+                            text = if (currentSpending > budgetAmount) "Budget Limit Exceeded!" else "Approaching Budget Limit!",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Black,
+                            color = Color.White
+                        )
+                        Text(
+                            text = "${"%.0f".format(spendingPercentage)}% of your ₹${"%.0f".format(budgetAmount)} limit used",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White.copy(alpha = 0.9f)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 
