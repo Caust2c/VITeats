@@ -92,14 +92,6 @@ fun AuthScreen(
             )
 
             Spacer(modifier = Modifier.height(6.dp))
-
-            NeobrutalPill(
-                text = "Campus Dining & Wallet",
-                backgroundColor = SoftCyan,
-                textColor = NeobrutalBlack,
-                isSelected = false
-            )
-
             Spacer(modifier = Modifier.height(28.dp))
 
             // Credentials Card
@@ -137,10 +129,10 @@ fun AuthScreen(
                     OutlinedTextField(
                         value = appNumber,
                         onValueChange = { appNumber = it },
-                        label = { Text("Application Number / Reg No", fontWeight = FontWeight.Bold) },
+                        label = { Text("Application Number", fontWeight = FontWeight.Bold) },
                         placeholder = { 
                             Text(
-                                "e.g. 21BCE1234", 
+                                "e.g. 1234123123", 
                                 color = Color(0xFF64748B),
                                 fontWeight = FontWeight.Medium
                             ) 

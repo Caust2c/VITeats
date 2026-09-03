@@ -54,20 +54,11 @@ fun StudentScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        // --- Header with Meal Schedule Pills ---
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(
-                text = "VITeats",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Black,
-                color = textPrimary,
-                letterSpacing = (-0.5).sp
-            )
-
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                contentPadding = PaddingValues(end = 16.dp)
-            ) {
+        // --- Meal Schedule Pills ---
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            contentPadding = PaddingValues(end = 16.dp)
+        ) {
                 items(MealType.allMeals()) { meal ->
                     val isActive = meal == mealStatus.activeMeal
                     val pillBg = when {
@@ -87,7 +78,6 @@ fun StudentScreen(
                     )
                 }
             }
-        }
 
         // --- Large Pale Yellow Wallet Balance Hero Card ---
         when (val state = balanceState) {

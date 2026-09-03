@@ -168,7 +168,7 @@ fun SettingsScreen(
                         color = textPrimary
                     )
                     Text(
-                        text = "v1.1.0",
+                        text = "v1.0.0",
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Black,
                         color = textMuted
@@ -197,7 +197,7 @@ fun SettingsScreen(
                 )
 
                 Text(
-                    text = "Log out of your VIT mess portal account on this device.",
+                    text = "Log out the VITeats account on this device.",
                     style = MaterialTheme.typography.bodySmall,
                     color = textMuted
                 )

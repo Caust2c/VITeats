@@ -82,6 +82,7 @@ fun HomeScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .statusBarsPadding()
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically

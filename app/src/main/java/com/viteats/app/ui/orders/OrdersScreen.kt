@@ -405,31 +405,35 @@ fun OrderListItem(
             }
 
             // Action Buttons: 1-Click Reorder & View QR (if available)
+            val mealStatus = remember { com.viteats.app.util.MealPeriodHelper.getCurrentMealStatus() }
+            val isMessClosed = mealStatus.activeMeal == null
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Compact Auto-width Yellow "1-Click Reorder" button
+                // Compact Auto-width Yellow "1-Click Reorder" / "Currently Closed" button
                 NeobrutalButton(
-                    onClick = onReorder,
-                    backgroundColor = PastelYellow,
-                    contentColor = NeobrutalBlack,
+                    onClick = { if (!isMessClosed) onReorder() },
+                    enabled = !isMessClosed,
+                    backgroundColor = if (isMessClosed) Color.LightGray else PastelYellow,
+                    contentColor = if (isMessClosed) Color.DarkGray else NeobrutalBlack,
                     borderColor = NeobrutalBlack,
                     borderWidth = 2.dp,
-                    shadowOffset = 2.dp,
+                    shadowOffset = if (isMessClosed) 0.dp else 2.dp,
                     cornerRadius = 8.dp,
                     contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Replay,
+                        imageVector = if (isMessClosed) Icons.Default.Schedule else Icons.Default.Replay,
                         contentDescription = null,
                         modifier = Modifier.size(15.dp),
-                        tint = NeobrutalBlack
+                        tint = if (isMessClosed) Color.DarkGray else NeobrutalBlack
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "1-Click Reorder",
+                        text = if (isMessClosed) "Currently Closed" else "1-Click Reorder",
                         fontWeight = FontWeight.Black,
                         style = MaterialTheme.typography.labelMedium
                     )
