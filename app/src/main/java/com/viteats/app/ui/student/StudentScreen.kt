@@ -43,7 +43,6 @@ import com.viteats.app.util.MealType
 import java.time.LocalDate
 import java.time.YearMonth
 import java.util.Calendar
-import java.util.Locale
 
 @Composable
 fun StudentScreen(
@@ -204,34 +203,48 @@ fun StudentScreen(
                             verticalArrangement = Arrangement.spacedBy(14.dp)
                         ) {
                             Row(
-                                modifier = Modifier.wrapContentWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(34.dp)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(if (isMonthRolledOver) NeobrutalWhite else PastelYellow)
-                                        .border(1.5.dp, NeobrutalBlack, RoundedCornerShape(8.dp)),
-                                    contentAlignment = Alignment.Center
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Default.CalendarMonth,
-                                        contentDescription = null,
-                                        tint = NeobrutalBlack,
-                                        modifier = Modifier.size(18.dp)
+                                    Box(
+                                        modifier = Modifier
+                                            .size(34.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(if (isMonthRolledOver) NeobrutalWhite else PastelYellow)
+                                            .border(1.5.dp, NeobrutalBlack, RoundedCornerShape(8.dp)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.CalendarMonth,
+                                            contentDescription = null,
+                                            tint = NeobrutalBlack,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+
+                                    Text(
+                                        text = if (isMonthRolledOver) "New Month Started!"
+                                        else if (initialMonthlyAllocation <= 0.0) "Set Monthly Allocation"
+                                        else "Update Monthly Allocation",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Black,
+                                        color = if (isMonthRolledOver) NeobrutalBlack else textPrimary
                                     )
                                 }
 
-                                Text(
-                                    text = if (isMonthRolledOver) "New Month Started!"
-                                    else if (initialMonthlyAllocation <= 0.0) "Set Monthly Allocation"
-                                    else "Update Monthly Allocation",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Black,
-                                    color = if (isMonthRolledOver) NeobrutalBlack else textPrimary
-                                )
+                                if (initialMonthlyAllocation > 0.0 && isEditingAllocation && !isMonthRolledOver) {
+                                    TextButton(
+                                        onClick = { isEditingAllocation = false },
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                                    ) {
+                                        Text("Cancel", fontWeight = FontWeight.Bold, color = textMuted)
+                                    }
+                                }
                             }
 
                             Row(
@@ -299,14 +312,16 @@ fun StudentScreen(
                     (currentSpending / initialMonthlyAllocation).toFloat().coerceIn(0f, 1f)
                 } else 0f
 
-                val remainingDaysInMonth = remember {
-                    (YearMonth.now().lengthOfMonth() - LocalDate.now().dayOfMonth + 1).coerceAtLeast(1)
+                val today = remember { LocalDate.now() }
+                val yearMonth = remember(today) { YearMonth.from(today) }
+                val daysInMonth = remember(yearMonth) { yearMonth.lengthOfMonth() }
+                val currentDay = remember(today) { today.dayOfMonth }
+                val remainingDays = remember(daysInMonth, currentDay) { (daysInMonth - currentDay + 1).coerceAtLeast(1) }
+                val perDayAmount = remember(remainingBudget, remainingDays) {
+                    if (remainingDays > 0) remainingBudget / remainingDays else 0.0
                 }
-                val dailyAllowableSpend = remember(remainingBudget, remainingDaysInMonth) {
-                    if (remainingDaysInMonth > 0) (remainingBudget / remainingDaysInMonth).coerceAtLeast(0.0) else 0.0
-                }
-                val formattedDailySpend = remember(dailyAllowableSpend) {
-                    String.format(Locale.getDefault(), "%.2f", dailyAllowableSpend)
+                val formattedDailySpend = remember(perDayAmount) {
+                    String.format(java.util.Locale.US, "%.2f", perDayAmount)
                 }
 
                 NeobrutalCard(
@@ -465,7 +480,9 @@ fun StudentScreen(
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 16.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -478,7 +495,6 @@ fun StudentScreen(
 
                             NeobrutalPill(
                                 text = "Meal Stats",
-                                modifier = Modifier.padding(top = 12.dp),
                                 backgroundColor = SoftCyan,
                                 textColor = NeobrutalBlack,
                                 isSelected = false
