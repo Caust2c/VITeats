@@ -18,6 +18,24 @@ class StudentViewModel(private val repository: StudentRepository) : ViewModel() 
     private val _balanceState = MutableStateFlow<BalanceState>(BalanceState.Loading)
     val balanceState: StateFlow<BalanceState> = _balanceState
 
+    private val _budgetLimit = MutableStateFlow<Double>(3000.0)
+    val budgetLimit: StateFlow<Double> = _budgetLimit
+
+    private val _currentSpending = MutableStateFlow<Double>(2450.0)
+    val currentSpending: StateFlow<Double> = _currentSpending
+
+    fun updateBudgetLimit(newLimit: Double) {
+        if (newLimit > 0) {
+            _budgetLimit.value = newLimit
+        }
+    }
+
+    fun updateCurrentSpending(spending: Double) {
+        if (spending >= 0) {
+            _currentSpending.value = spending
+        }
+    }
+
     fun fetchBalance() {
         viewModelScope.launch {
             _balanceState.value = BalanceState.Loading
