@@ -94,10 +94,13 @@ fun NeobrutalButton(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val currentOffset = if (isPressed && enabled) 1.dp else shadowOffset
+    val currentOffset = if (isPressed && enabled) (shadowOffset / 2).coerceAtLeast(1.dp) else shadowOffset
 
-    Box(modifier = modifier) {
-        // Shadow
+    Box(
+        modifier = modifier.padding(end = shadowOffset, bottom = shadowOffset),
+        propagateMinConstraints = true
+    ) {
+        // Shadow Layer (sits underneath bottom-right of the button)
         if (shadowOffset > 0.dp) {
             Box(
                 modifier = Modifier
@@ -110,7 +113,7 @@ fun NeobrutalButton(
             )
         }
 
-        // Button Surface
+        // Button Surface Layer (overlaps directly on top of shadow)
         Surface(
             modifier = Modifier
                 .clip(shape)
@@ -131,12 +134,16 @@ fun NeobrutalButton(
             contentColor = if (enabled) contentColor else contentColor.copy(alpha = 0.5f),
             shape = shape
         ) {
-            Row(
+            Box(
                 modifier = Modifier.padding(contentPadding),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-                content = content
-            )
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                    content = content
+                )
+            }
         }
     }
 }
