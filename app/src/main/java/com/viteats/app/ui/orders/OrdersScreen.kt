@@ -44,6 +44,7 @@ fun OrdersScreen(viewModel: OrdersViewModel, onOrderClick: (String) -> Unit) {
     val screenBg = if (isDark) DarkCharcoalBg else LavenderBackground
     val cardBg = if (isDark) DarkCardBg else NeobrutalWhite
     val textPrimary = if (isDark) DarkTextPrimary else NeobrutalBlack
+    val textMuted = if (isDark) DarkTextSecondary else MutedText
 
     LaunchedEffect(Unit) {
         viewModel.reorderMessage.collectLatest { msg ->
@@ -85,20 +86,20 @@ fun OrdersScreen(viewModel: OrdersViewModel, onOrderClick: (String) -> Unit) {
                                         imageVector = Icons.AutoMirrored.Filled.ReceiptLong,
                                         contentDescription = null,
                                         modifier = Modifier.size(56.dp),
-                                        tint = NeobrutalBlack
+                                        tint = textPrimary
                                     )
                                     Spacer(modifier = Modifier.height(16.dp))
                                     Text(
                                         text = "No Past Orders Found",
                                         style = MaterialTheme.typography.titleLarge,
                                         fontWeight = FontWeight.Black,
-                                        color = NeobrutalBlack
+                                        color = textPrimary
                                     )
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(
                                         text = "Your completed and upcoming mess orders will appear here.",
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = MutedText
+                                        color = textMuted
                                     )
                                     Spacer(modifier = Modifier.height(20.dp))
                                     NeobrutalButton(
@@ -127,7 +128,7 @@ fun OrdersScreen(viewModel: OrdersViewModel, onOrderClick: (String) -> Unit) {
                                         text = "Previous Orders",
                                         style = MaterialTheme.typography.titleLarge,
                                         fontWeight = FontWeight.Black,
-                                        color = NeobrutalBlack,
+                                        color = textPrimary,
                                         letterSpacing = (-0.5).sp
                                     )
 

@@ -177,7 +177,7 @@ fun MenuScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             NeobrutalCard(
-                                backgroundColor = NeobrutalWhite,
+                                backgroundColor = cardBg,
                                 shadowOffset = 4.dp
                             ) {
                                 Column(
@@ -188,7 +188,7 @@ fun MenuScreen(
                                         imageVector = if (selectedCategory == "Favourites") Icons.Default.FavoriteBorder else Icons.Default.SearchOff,
                                         contentDescription = null,
                                         modifier = Modifier.size(48.dp),
-                                        tint = if (selectedCategory == "Favourites") Color(0xFFEF4444) else NeobrutalBlack
+                                        tint = if (selectedCategory == "Favourites") Color(0xFFEF4444) else textPrimary
                                     )
                                     Spacer(modifier = Modifier.height(12.dp))
                                     Text(
@@ -197,14 +197,14 @@ fun MenuScreen(
                                         else "No items in this category",
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold,
-                                        color = NeobrutalBlack
+                                        color = textPrimary
                                     )
                                     if (selectedCategory == "Favourites") {
                                         Spacer(modifier = Modifier.height(6.dp))
                                         Text(
                                             text = "Tap the heart icon on any food item to save your favorite dishes here.",
                                             style = MaterialTheme.typography.bodySmall,
-                                            color = MutedText
+                                            color = textMuted
                                         )
                                     }
                                 }
