@@ -474,13 +474,11 @@ fun StudentScreen(
                     cornerRadius = 20.dp
                 ) {
                     Column(
-                        modifier = Modifier.padding(20.dp),
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 18.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 16.dp),
+                            modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -494,13 +492,13 @@ fun StudentScreen(
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(14.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             // Custom Donut Chart
                             NeobrutalExpenseDonutChart(
                                 categories = expenseCategories,
-                                modifier = Modifier.size(135.dp),
+                                modifier = Modifier.size(130.dp),
                                 strokeWidth = 22.dp
                             ) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -553,25 +551,14 @@ fun StudentScreen(
                                             )
                                         }
 
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                        ) {
-                                            Text(
-                                                text = "—",
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                fontWeight = FontWeight.Bold,
-                                                color = textMuted
-                                            )
-                                            Text(
-                                                text = "₹${cat.amount.toInt()}",
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                fontWeight = FontWeight.Bold,
-                                                color = textPrimary,
-                                                maxLines = 1,
-                                                softWrap = false
-                                            )
-                                        }
+                                        Text(
+                                            text = "₹${cat.amount.toInt()}",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = textPrimary,
+                                            maxLines = 1,
+                                            softWrap = false
+                                        )
                                     }
                                 }
                             }
@@ -725,7 +712,7 @@ fun NeobrutalExpenseDonutChart(
         modifier = modifier,
         contentAlignment = Alignment.Center
     ) {
-        Canvas(modifier = Modifier.fillMaxSize().padding(14.dp)) {
+        Canvas(modifier = Modifier.fillMaxSize().padding(10.dp)) {
             val strokeWidthPx = strokeWidth.toPx()
             val borderStrokePx = 2.dp.toPx()
             val outerRadius = size.minDimension / 2f
@@ -759,7 +746,7 @@ fun NeobrutalExpenseDonutChart(
                     val pct = if (item.percentage > 0) item.percentage else if (total > 0) ((item.amount / total) * 100).toInt() else 0
                     if (pct > 0) {
                         val midAngle = startAngle + sweepAngle / 2f
-                        val isInside = sweepAngle >= 22f
+                        val isInside = sweepAngle >= 20f
                         labelsToDraw.add(SegmentLabel(pct, midAngle, isInside))
                     }
 
@@ -793,7 +780,7 @@ fun NeobrutalExpenseDonutChart(
                 val textLayout = textMeasurer.measure(
                     text = textToDraw,
                     style = TextStyle(
-                        fontSize = if (label.isInside) 10.sp else 9.sp,
+                        fontSize = if (label.isInside) 8.5.sp else 7.5.sp,
                         fontWeight = FontWeight.Black,
                         color = if (label.isInside) NeobrutalBlack else adjacentLabelColor
                     )
@@ -813,7 +800,7 @@ fun NeobrutalExpenseDonutChart(
                     )
                 } else {
                     val tickStart = outerRadius
-                    val tickEnd = outerRadius + 3.dp.toPx()
+                    val tickEnd = outerRadius + 2.5.dp.toPx()
                     drawLine(
                         color = NeobrutalBlack,
                         start = Offset(centerOffset.x + tickStart * cosA, centerOffset.y + tickStart * sinA),
@@ -821,7 +808,7 @@ fun NeobrutalExpenseDonutChart(
                         strokeWidth = 1.5.dp.toPx()
                     )
 
-                    val labelRadius = outerRadius + 8.dp.toPx()
+                    val labelRadius = outerRadius + 7.dp.toPx()
                     val posX = centerOffset.x + (labelRadius * cosA)
                     val posY = centerOffset.y + (labelRadius * sinA)
 
