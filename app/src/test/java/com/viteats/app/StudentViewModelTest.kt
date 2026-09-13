@@ -114,4 +114,152 @@ class StudentViewModelTest {
         assertEquals(0.0, viewModel.initialMonthlyAllocation.value, 0.001)
         assertEquals(0.0, viewModel.currentSpending.value, 0.001)
     }
+
+    @Test
+    fun testCategoryAggregationFromOrders() {
+        val viewModel = StudentViewModel(StudentRepository())
+
+        val testOrders = listOf(
+            com.viteats.app.data.remote.Order(
+                OrderDate = "13/SEP/2026",
+                OrderTime = "08:30 AM",
+                NetAmount = 100.0,
+                OrderId = "101",
+                Status = "Success",
+                CancelStatus = "Cancel",
+                sname = "BREAKFAST",
+                qrstat = 1,
+                RegNo = "21BCE1234",
+                studname = "Test Student"
+            ),
+            com.viteats.app.data.remote.Order(
+                OrderDate = "13/SEP/2026",
+                OrderTime = "01:15 PM",
+                NetAmount = 200.0,
+                OrderId = "102",
+                Status = "Delivered",
+                CancelStatus = "Cancel",
+                sname = "Special Lunch Thali",
+                qrstat = 1,
+                RegNo = "21BCE1234",
+                studname = "Test Student"
+            ),
+            com.viteats.app.data.remote.Order(
+                OrderDate = "13/SEP/2026",
+                OrderTime = "05:00 PM",
+                NetAmount = 50.0,
+                OrderId = "103",
+                Status = "Success",
+                CancelStatus = "Cancel",
+                sname = "Samosa and Tea",
+                qrstat = 1,
+                RegNo = "21BCE1234",
+                studname = "Test Student"
+            ),
+            com.viteats.app.data.remote.Order(
+                OrderDate = "13/SEP/2026",
+                OrderTime = "08:00 PM",
+                NetAmount = 150.0,
+                OrderId = "104",
+                Status = "Success",
+                CancelStatus = "Cancel",
+                sname = "Dinner Buffet",
+                qrstat = 1,
+                RegNo = "21BCE1234",
+                studname = "Test Student"
+            ),
+            com.viteats.app.data.remote.Order(
+                OrderDate = "13/SEP/2026",
+                OrderTime = "01:00 PM",
+                NetAmount = 300.0,
+                OrderId = "105",
+                Status = "Cancelled",
+                CancelStatus = "Cancelled",
+                sname = "LUNCH",
+                qrstat = 0,
+                RegNo = "21BCE1234",
+                studname = "Test Student"
+            )
+        )
+
+        viewModel.processOrdersForExpenses(testOrders)
+
+        val spending = viewModel.categorySpending.value
+        assertEquals(100.0, spending.breakfast, 0.001)
+        assertEquals(200.0, spending.lunch, 0.001)
+        assertEquals(50.0, spending.snacks, 0.001)
+        assertEquals(150.0, spending.dinner, 0.001)
+        assertEquals(500.0, spending.totalSpent, 0.001)
+
+        // Percentages:
+        // Lunch: 200 / 500 = 40%
+        // Dinner: 150 / 500 = 30%
+        // Breakfast: 100 / 500 = 20%
+        // Snacks: 50 / 500 = 10%
+        assertEquals(40, spending.lunchPercentage)
+        assertEquals(30, spending.dinnerPercentage)
+        assertEquals(20, spending.breakfastPercentage)
+        assertEquals(10, spending.snacksPercentage)
+    }
+
+    @Test
+    fun testOrderClassificationByTimeFallback() {
+        val viewModel = StudentViewModel(StudentRepository())
+
+        val orderBreakfast = com.viteats.app.data.remote.Order(
+            OrderDate = "13/SEP/2026",
+            OrderTime = "09:15 am",
+            NetAmount = 80.0,
+            OrderId = "201",
+            Status = "Success",
+            CancelStatus = "Cancel",
+            sname = "Mess Counter",
+            qrstat = 1,
+            RegNo = "21BCE1234",
+            studname = "Test Student"
+        )
+        assertEquals("Breakfast", viewModel.classifyOrderCategory(orderBreakfast))
+
+        val orderLunch = com.viteats.app.data.remote.Order(
+            OrderDate = "13/SEP/2026",
+            OrderTime = "12:30 pm",
+            NetAmount = 120.0,
+            OrderId = "202",
+            Status = "Success",
+            CancelStatus = "Cancel",
+            sname = "Mess Counter",
+            qrstat = 1,
+            RegNo = "21BCE1234",
+            studname = "Test Student"
+        )
+        assertEquals("Lunch", viewModel.classifyOrderCategory(orderLunch))
+
+        val orderSnacks = com.viteats.app.data.remote.Order(
+            OrderDate = "13/SEP/2026",
+            OrderTime = "05:30 pm",
+            NetAmount = 40.0,
+            OrderId = "203",
+            Status = "Success",
+            CancelStatus = "Cancel",
+            sname = "Mess Counter",
+            qrstat = 1,
+            RegNo = "21BCE1234",
+            studname = "Test Student"
+        )
+        assertEquals("Snacks", viewModel.classifyOrderCategory(orderSnacks))
+
+        val orderDinner = com.viteats.app.data.remote.Order(
+            OrderDate = "13/SEP/2026",
+            OrderTime = "08:15 pm",
+            NetAmount = 130.0,
+            OrderId = "204",
+            Status = "Success",
+            CancelStatus = "Cancel",
+            sname = "Mess Counter",
+            qrstat = 1,
+            RegNo = "21BCE1234",
+            studname = "Test Student"
+        )
+        assertEquals("Dinner", viewModel.classifyOrderCategory(orderDinner))
+    }
 }

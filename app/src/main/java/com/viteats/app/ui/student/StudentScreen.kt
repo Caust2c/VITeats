@@ -62,6 +62,7 @@ fun StudentScreen(
 
     LaunchedEffect(Unit) {
         mealStatus = MealPeriodHelper.getCurrentMealStatus()
+        viewModel.fetchOrdersAndExpenses()
     }
 
     Column(
@@ -449,23 +450,16 @@ fun StudentScreen(
                     }
                 }
 
-                // --- Expense Breakdown Card (Dynamic Spent Calculation) ---
-                val expenseCategories = remember(currentSpending) {
-                    if (currentSpending > 0) {
-                        listOf(
-                            ExpenseCategory("Lunch", currentSpending * 0.42, MintGreen),
-                            ExpenseCategory("Dinner", currentSpending * 0.30, SoftCyan),
-                            ExpenseCategory("Snacks", currentSpending * 0.18, PastelYellow),
-                            ExpenseCategory("Breakfast", currentSpending * 0.10, SoftCoral)
-                        )
-                    } else {
-                        listOf(
-                            ExpenseCategory("Lunch", 0.0, MintGreen),
-                            ExpenseCategory("Dinner", 0.0, SoftCyan),
-                            ExpenseCategory("Snacks", 0.0, PastelYellow),
-                            ExpenseCategory("Breakfast", 0.0, SoftCoral)
-                        )
-                    }
+                // --- Expense Breakdown Card (Dynamic Order History Aggregation) ---
+                val categorySpending by viewModel.categorySpending.collectAsState()
+
+                val expenseCategories = remember(categorySpending) {
+                    listOf(
+                        ExpenseCategory("Lunch", categorySpending.lunch, MintGreen),
+                        ExpenseCategory("Dinner", categorySpending.dinner, SoftCyan),
+                        ExpenseCategory("Snacks", categorySpending.snacks, PastelYellow),
+                        ExpenseCategory("Breakfast", categorySpending.breakfast, SoftCoral)
+                    )
                 }
 
                 NeobrutalCard(
@@ -520,7 +514,7 @@ fun StudentScreen(
                                         color = textMuted
                                     )
                                     Text(
-                                        text = "₹${currentSpending.toInt()}",
+                                        text = "₹${categorySpending.totalSpent.toInt()}",
                                         style = MaterialTheme.typography.labelLarge,
                                         fontWeight = FontWeight.Black,
                                         color = textPrimary
@@ -533,9 +527,14 @@ fun StudentScreen(
                                 modifier = Modifier.weight(1f),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                val totalExp = expenseCategories.sumOf { it.amount }
                                 expenseCategories.forEach { cat ->
-                                    val pct = if (totalExp > 0) ((cat.amount / totalExp) * 100).toInt() else 0
+                                    val pct = when (cat.name) {
+                                        "Lunch" -> categorySpending.lunchPercentage
+                                        "Dinner" -> categorySpending.dinnerPercentage
+                                        "Snacks" -> categorySpending.snacksPercentage
+                                        "Breakfast" -> categorySpending.breakfastPercentage
+                                        else -> 0
+                                    }
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -560,12 +559,23 @@ fun StudentScreen(
                                             )
                                         }
 
-                                        Text(
-                                            text = "$pct%",
-                                            style = MaterialTheme.typography.labelLarge,
-                                            fontWeight = FontWeight.Black,
-                                            color = textPrimary
-                                        )
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Text(
+                                                text = "₹${cat.amount.toInt()}",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = textMuted
+                                            )
+                                            Text(
+                                                text = "$pct%",
+                                                style = MaterialTheme.typography.labelLarge,
+                                                fontWeight = FontWeight.Black,
+                                                color = textPrimary
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -592,7 +602,6 @@ fun StudentScreen(
                             color = textPrimary
                         )
 
-                        Spacer(modifier = Modifier.height(2.dp))
 
                         NeobrutalDetailRow(
                             icon = Icons.Outlined.Email,
@@ -609,7 +618,7 @@ fun StudentScreen(
                         NeobrutalDetailRow(
                             icon = Icons.Outlined.Person,
                             label = "Customer ID",
-                            value = balance.custid.ifBlank { balance.regno.ifBlank { "21BCE1234" } }
+                            value = balance.custid.ifBlank { balance.regno.ifBlank { "2000123234" } }
                         )
                     }
                 }

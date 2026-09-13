@@ -7,11 +7,21 @@ import com.viteats.app.data.remote.Order
 import com.viteats.app.data.remote.OrderListRequest
 import com.viteats.app.data.remote.ProodleApi
 
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+
 class OrderRepository(
     private val api: ProodleApi,
     private val sessionManager: SessionManager
 ) {
     private val gson = Gson()
+    private val _ordersUpdated = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val ordersUpdated: SharedFlow<Unit> = _ordersUpdated.asSharedFlow()
+
+    fun notifyOrdersUpdated() {
+        _ordersUpdated.tryEmit(Unit)
+    }
 
     suspend fun getRawOrders(): String {
         val userId = sessionManager.userIdentifier
@@ -146,6 +156,7 @@ class OrderRepository(
                 return Result.failure(Exception("Payment declined: Invalid PIN or insufficient balance."))
             }
 
+            notifyOrdersUpdated()
             return Result.success(orderNo)
         } catch (e: Exception) {
             return Result.failure(e)

@@ -211,7 +211,10 @@ fun HomeScreen(
     // Refresh data when switching tabs or initially
     LaunchedEffect(selectedTab) {
         when (selectedTab) {
-            0 -> studentViewModel.fetchBalance()
+            0 -> {
+                studentViewModel.fetchBalance()
+                studentViewModel.fetchOrdersAndExpenses()
+            }
             1 -> menuViewModel.fetchMenu()
             2 -> ordersViewModel.fetchOrders()
             3 -> settingsViewModel.fetchStudentProfile()
