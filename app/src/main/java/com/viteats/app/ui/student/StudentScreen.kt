@@ -32,6 +32,9 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -456,10 +459,10 @@ fun StudentScreen(
 
                 val expenseCategories = remember(categorySpending) {
                     listOf(
-                        ExpenseCategory("Lunch", categorySpending.lunch, MintGreen),
-                        ExpenseCategory("Dinner", categorySpending.dinner, SoftCyan),
-                        ExpenseCategory("Snacks", categorySpending.snacks, PastelYellow),
-                        ExpenseCategory("Breakfast", categorySpending.breakfast, SoftCoral)
+                        ExpenseCategory("Lunch", categorySpending.lunch, MintGreen, categorySpending.lunchPercentage),
+                        ExpenseCategory("Dinner", categorySpending.dinner, SoftCyan, categorySpending.dinnerPercentage),
+                        ExpenseCategory("Snacks", categorySpending.snacks, PastelYellow, categorySpending.snacksPercentage),
+                        ExpenseCategory("Breakfast", categorySpending.breakfast, SoftCoral, categorySpending.breakfastPercentage)
                     )
                 }
 
@@ -497,8 +500,8 @@ fun StudentScreen(
                             // Custom Donut Chart
                             NeobrutalExpenseDonutChart(
                                 categories = expenseCategories,
-                                modifier = Modifier.size(120.dp),
-                                strokeWidth = 20.dp
+                                modifier = Modifier.size(135.dp),
+                                strokeWidth = 22.dp
                             ) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Text(
@@ -524,13 +527,6 @@ fun StudentScreen(
                                 verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
                                 expenseCategories.forEach { cat ->
-                                    val pct = when (cat.name) {
-                                        "Lunch" -> categorySpending.lunchPercentage
-                                        "Dinner" -> categorySpending.dinnerPercentage
-                                        "Snacks" -> categorySpending.snacksPercentage
-                                        "Breakfast" -> categorySpending.breakfastPercentage
-                                        else -> 0
-                                    }
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -538,8 +534,7 @@ fun StudentScreen(
                                     ) {
                                         Row(
                                             verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                            modifier = Modifier.weight(1f, fill = false)
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                                         ) {
                                             Box(
                                                 modifier = Modifier
@@ -554,27 +549,24 @@ fun StudentScreen(
                                                 fontWeight = FontWeight.Bold,
                                                 color = textPrimary,
                                                 maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
+                                                softWrap = false
                                             )
                                         }
 
                                         Row(
                                             verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                            modifier = Modifier.padding(start = 8.dp)
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
                                         ) {
                                             Text(
-                                                text = "₹${cat.amount.toInt()}",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                fontWeight = FontWeight.SemiBold,
-                                                color = textMuted,
-                                                maxLines = 1,
-                                                softWrap = false
+                                                text = "—",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                color = textMuted
                                             )
                                             Text(
-                                                text = "$pct%",
-                                                style = MaterialTheme.typography.labelLarge,
-                                                fontWeight = FontWeight.Black,
+                                                text = "₹${cat.amount.toInt()}",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.Bold,
                                                 color = textPrimary,
                                                 maxLines = 1,
                                                 softWrap = false
@@ -713,28 +705,42 @@ fun NeobrutalDetailRow(
 data class ExpenseCategory(
     val name: String,
     val amount: Double,
-    val color: Color
+    val color: Color,
+    val percentage: Int = 0
 )
 
 @Composable
 fun NeobrutalExpenseDonutChart(
     categories: List<ExpenseCategory>,
     modifier: Modifier = Modifier,
-    strokeWidth: Dp = 20.dp,
+    strokeWidth: Dp = 22.dp,
     centerContent: (@Composable () -> Unit)? = null
 ) {
     val total = remember(categories) { categories.sumOf { it.amount } }
+    val textMeasurer = rememberTextMeasurer()
+    val isDark = LocalDarkTheme.current
+    val adjacentLabelColor = if (isDark) DarkTextPrimary else NeobrutalBlack
 
     Box(
         modifier = modifier,
         contentAlignment = Alignment.Center
     ) {
-        Canvas(modifier = Modifier.fillMaxSize().padding(6.dp)) {
+        Canvas(modifier = Modifier.fillMaxSize().padding(14.dp)) {
             val strokeWidthPx = strokeWidth.toPx()
             val borderStrokePx = 2.dp.toPx()
+            val outerRadius = size.minDimension / 2f
+            val innerRadius = outerRadius - strokeWidthPx
             val arcSize = size.minDimension - strokeWidthPx
-            val topLeftOffset = Offset(strokeWidthPx / 2, strokeWidthPx / 2)
+            val topLeftOffset = Offset(strokeWidthPx / 2f, strokeWidthPx / 2f)
+            val centerOffset = Offset(size.width / 2f, size.height / 2f)
             var startAngle = -90f
+
+            data class SegmentLabel(
+                val pct: Int,
+                val midAngle: Float,
+                val isInside: Boolean
+            )
+            val labelsToDraw = mutableListOf<SegmentLabel>()
 
             // Draw colored segment arcs
             categories.forEach { item ->
@@ -749,12 +755,19 @@ fun NeobrutalExpenseDonutChart(
                         size = Size(arcSize, arcSize),
                         style = Stroke(width = strokeWidthPx, cap = StrokeCap.Butt)
                     )
+
+                    val pct = if (item.percentage > 0) item.percentage else if (total > 0) ((item.amount / total) * 100).toInt() else 0
+                    if (pct > 0) {
+                        val midAngle = startAngle + sweepAngle / 2f
+                        val isInside = sweepAngle >= 22f
+                        labelsToDraw.add(SegmentLabel(pct, midAngle, isInside))
+                    }
+
                     startAngle += sweepAngle
                 }
             }
 
             // Neobrutalist outer circle border
-            val outerRadius = size.minDimension / 2
             drawCircle(
                 color = NeobrutalBlack,
                 radius = outerRadius,
@@ -762,13 +775,64 @@ fun NeobrutalExpenseDonutChart(
             )
 
             // Neobrutalist inner circle border
-            val innerRadius = outerRadius - strokeWidthPx
             if (innerRadius > 0f) {
                 drawCircle(
                     color = NeobrutalBlack,
                     radius = innerRadius,
                     style = Stroke(width = borderStrokePx)
                 )
+            }
+
+            // Draw percentage values directly inside or adjacent to segments
+            labelsToDraw.forEach { label ->
+                val angleRad = Math.toRadians(label.midAngle.toDouble())
+                val cosA = kotlin.math.cos(angleRad).toFloat()
+                val sinA = kotlin.math.sin(angleRad).toFloat()
+
+                val textToDraw = "${label.pct}%"
+                val textLayout = textMeasurer.measure(
+                    text = textToDraw,
+                    style = TextStyle(
+                        fontSize = if (label.isInside) 10.sp else 9.sp,
+                        fontWeight = FontWeight.Black,
+                        color = if (label.isInside) NeobrutalBlack else adjacentLabelColor
+                    )
+                )
+
+                if (label.isInside) {
+                    val ringMidRadius = (outerRadius + innerRadius) / 2f
+                    val posX = centerOffset.x + (ringMidRadius * cosA)
+                    val posY = centerOffset.y + (ringMidRadius * sinA)
+
+                    drawText(
+                        textLayoutResult = textLayout,
+                        topLeft = Offset(
+                            posX - textLayout.size.width / 2f,
+                            posY - textLayout.size.height / 2f
+                        )
+                    )
+                } else {
+                    val tickStart = outerRadius
+                    val tickEnd = outerRadius + 3.dp.toPx()
+                    drawLine(
+                        color = NeobrutalBlack,
+                        start = Offset(centerOffset.x + tickStart * cosA, centerOffset.y + tickStart * sinA),
+                        end = Offset(centerOffset.x + tickEnd * cosA, centerOffset.y + tickEnd * sinA),
+                        strokeWidth = 1.5.dp.toPx()
+                    )
+
+                    val labelRadius = outerRadius + 8.dp.toPx()
+                    val posX = centerOffset.x + (labelRadius * cosA)
+                    val posY = centerOffset.y + (labelRadius * sinA)
+
+                    drawText(
+                        textLayoutResult = textLayout,
+                        topLeft = Offset(
+                            posX - textLayout.size.width / 2f,
+                            posY - textLayout.size.height / 2f
+                        )
+                    )
+                }
             }
         }
 
