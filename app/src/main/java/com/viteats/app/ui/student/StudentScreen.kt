@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -47,6 +48,15 @@ import com.viteats.app.util.MealType
 import java.time.LocalDate
 import java.time.YearMonth
 import java.util.Calendar
+
+enum class FinancialHealthStatus(
+    val label: String,
+    val color: Color
+) {
+    ON_TRACK("On Track", Color(0xFFA8F0D4)),
+    PACING_FAST("Pacing Fast", Color(0xFFFFD166)),
+    OVER_BUDGET("Over Budget", Color(0xFFFF6B6B))
+}
 
 @Composable
 fun StudentScreen(
@@ -191,127 +201,10 @@ fun StudentScreen(
                 val currentSpending by viewModel.currentSpending.collectAsState()
                 val isMonthRolledOver by viewModel.isMonthRolledOver.collectAsState()
 
-                var allocationInputText by remember { mutableStateOf("") }
-                var isEditingAllocation by remember { mutableStateOf(false) }
+                var isEditingBudget by remember { mutableStateOf(isMonthRolledOver || initialMonthlyAllocation <= 0.0) }
+                var customTargetDays by remember { mutableStateOf<Int?>(null) }
 
-                // --- Monthly Rollover or Unset Allocation Prompt Card ---
-                if (isMonthRolledOver || initialMonthlyAllocation <= 0.0 || isEditingAllocation) {
-                    NeobrutalCard(
-                        backgroundColor = if (isMonthRolledOver) PastelYellow else cardBg,
-                        borderColor = NeobrutalBlack,
-                        borderWidth = 2.5.dp,
-                        shadowOffset = 5.dp,
-                        cornerRadius = 20.dp
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(20.dp),
-                            verticalArrangement = Arrangement.spacedBy(14.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(34.dp)
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .background(if (isMonthRolledOver) NeobrutalWhite else PastelYellow)
-                                            .border(1.5.dp, NeobrutalBlack, RoundedCornerShape(8.dp)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.CalendarMonth,
-                                            contentDescription = null,
-                                            tint = NeobrutalBlack,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    }
-
-                                    Text(
-                                        text = if (isMonthRolledOver) "New Month Started!"
-                                        else if (initialMonthlyAllocation <= 0.0) "Set Monthly Allocation"
-                                        else "Update Monthly Allocation",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Black,
-                                        color = if (isMonthRolledOver) NeobrutalBlack else textPrimary
-                                    )
-                                }
-
-                                if (initialMonthlyAllocation > 0.0 && isEditingAllocation && !isMonthRolledOver) {
-                                    TextButton(
-                                        onClick = { isEditingAllocation = false },
-                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
-                                    ) {
-                                        Text("Cancel", fontWeight = FontWeight.Bold, color = textMuted)
-                                    }
-                                }
-                            }
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                OutlinedTextField(
-                                    value = allocationInputText,
-                                    onValueChange = { input ->
-                                        allocationInputText = input.filter { it.isDigit() || it == '.' }
-                                    },
-                                    placeholder = {
-                                        Text(
-                                            text = if (initialMonthlyAllocation > 0) "${initialMonthlyAllocation.toInt()}" else "9000",
-                                            color = Color(0xFF64748B)
-                                        )
-                                    },
-                                    prefix = { Text("₹", fontWeight = FontWeight.Bold, color = textPrimary) },
-                                    singleLine = true,
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        focusedTextColor = textPrimary,
-                                        unfocusedTextColor = textPrimary,
-                                        focusedBorderColor = NeobrutalBlack,
-                                        unfocusedBorderColor = NeobrutalBlack.copy(alpha = 0.6f),
-                                        focusedContainerColor = if (isDark) Color(0xFF374151) else LavenderCard,
-                                        unfocusedContainerColor = if (isDark) Color(0xFF374151) else LavenderCard
-                                    ),
-                                    modifier = Modifier.weight(1f)
-                                )
-
-                                NeobrutalButton(
-                                    onClick = {
-                                        val entered = allocationInputText.toDoubleOrNull()
-                                        if (entered != null && entered > 0) {
-                                            viewModel.setInitialMonthlyAllocation(entered)
-                                            allocationInputText = ""
-                                            isEditingAllocation = false
-                                        }
-                                    },
-                                    backgroundColor = MintGreen,
-                                    contentColor = NeobrutalBlack,
-                                    borderColor = NeobrutalBlack,
-                                    borderWidth = 2.dp,
-                                    shadowOffset = 2.dp,
-                                    cornerRadius = 10.dp,
-                                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 14.dp)
-                                ) {
-                                    Text(
-                                        text = "Set Allocation",
-                                        fontWeight = FontWeight.Black,
-                                        style = MaterialTheme.typography.labelLarge
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // --- Budget Tracking Card ---
+                // --- Dynamic "Financial Health" Dashboard Card ---
                 val remainingBudget = balance.bal
                 val budgetProgress = if (initialMonthlyAllocation > 0) {
                     (currentSpending / initialMonthlyAllocation).toFloat().coerceIn(0f, 1f)
@@ -321,12 +214,31 @@ fun StudentScreen(
                 val yearMonth = remember(today) { YearMonth.from(today) }
                 val daysInMonth = remember(yearMonth) { yearMonth.lengthOfMonth() }
                 val currentDay = remember(today) { today.dayOfMonth }
-                val remainingDays = remember(daysInMonth, currentDay) { (daysInMonth - currentDay + 1).coerceAtLeast(1) }
-                val perDayAmount = remember(remainingBudget, remainingDays) {
-                    if (remainingDays > 0) remainingBudget / remainingDays else 0.0
+                val defaultDaysRemaining = remember(daysInMonth, currentDay) { (daysInMonth - currentDay + 1).coerceAtLeast(1) }
+                val daysRemaining = customTargetDays ?: defaultDaysRemaining
+                val safeDailySpend = remember(remainingBudget, daysRemaining) {
+                    if (daysRemaining > 0) (remainingBudget / daysRemaining).coerceAtLeast(0.0) else 0.0
                 }
-                val formattedDailySpend = remember(perDayAmount) {
-                    String.format(java.util.Locale.US, "%.2f", perDayAmount)
+                val daysPassed = remember(currentDay) { currentDay.coerceAtLeast(1) }
+                val currentDailyAverage = remember(currentSpending, daysPassed) {
+                    if (daysPassed > 0) (currentSpending / daysPassed).coerceAtLeast(0.0) else 0.0
+                }
+
+                val healthStatus = remember(safeDailySpend, currentDailyAverage, remainingBudget) {
+                    if (remainingBudget <= 0.0 || safeDailySpend <= 0.0 || currentDailyAverage > safeDailySpend * 1.20) {
+                        FinancialHealthStatus.OVER_BUDGET
+                    } else if (currentDailyAverage > safeDailySpend) {
+                        FinancialHealthStatus.PACING_FAST
+                    } else {
+                        FinancialHealthStatus.ON_TRACK
+                    }
+                }
+
+                val formattedSafeDailySpend = remember(safeDailySpend) {
+                    java.text.NumberFormat.getIntegerInstance().format(safeDailySpend.toInt())
+                }
+                val formattedRemainingBudget = remember(remainingBudget) {
+                    java.text.NumberFormat.getIntegerInstance().format(remainingBudget.toInt().coerceAtLeast(0))
                 }
 
                 NeobrutalCard(
@@ -337,38 +249,246 @@ fun StudentScreen(
                     cornerRadius = 20.dp
                 ) {
                     Column(
-                        modifier = Modifier.padding(20.dp),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 18.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
+                        // Header with Title, Dynamic Status Badge, and "Edit Budget" Pencil Button
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = "Budget Tracking",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Black,
-                                color = textPrimary
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "Financial Health",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Black,
+                                    color = textPrimary
+                                )
 
-                            NeobrutalPill(
-                                text = if (initialMonthlyAllocation > 0) "₹${initialMonthlyAllocation.toInt()} Limit" else "Set Limit",
-                                backgroundColor = PastelYellow,
-                                textColor = NeobrutalBlack,
-                                isSelected = false,
-                                onClick = { isEditingAllocation = !isEditingAllocation }
-                            )
+                                // Dynamic Status-Driven Accent Badge
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(healthStatus.color)
+                                        .border(BorderStroke(2.dp, NeobrutalBlack), RoundedCornerShape(6.dp))
+                                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                                ) {
+                                    Text(
+                                        text = healthStatus.label,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Black,
+                                        color = NeobrutalBlack
+                                    )
+                                }
+                            }
+
+                            // "Edit Budget" Pencil Icon Button
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .offset(x = (-2).dp, y = (-2).dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(34.dp)
+                                        .offset(x = 3.dp, y = 3.dp)
+                                        .background(NeobrutalBlack, RoundedCornerShape(8.dp))
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .size(34.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(if (isEditingBudget) PastelYellow else (if (isDark) DarkCardBg else NeobrutalWhite))
+                                        .border(BorderStroke(2.dp, NeobrutalBlack), RoundedCornerShape(8.dp))
+                                        .clickable { isEditingBudget = !isEditingBudget },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Edit,
+                                        contentDescription = "Edit Budget",
+                                        tint = if (isDark && !isEditingBudget) DarkTextPrimary else NeobrutalBlack,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
                         }
 
-                        // Horizontal Progress Bar with Thick Black Border & Vibrant Green Fill
+                        // Inline Budget Setting & Editing Block
+                        if (isEditingBudget) {
+                            var budgetInputText by remember(initialMonthlyAllocation) {
+                                mutableStateOf(if (initialMonthlyAllocation > 0) initialMonthlyAllocation.toInt().toString() else "")
+                            }
+                            var targetDaysInputText by remember(daysRemaining) {
+                                mutableStateOf(daysRemaining.toString())
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(if (isDark) Color(0xFF24303F) else LavenderCard)
+                                    .border(BorderStroke(2.dp, NeobrutalBlack), RoundedCornerShape(14.dp))
+                                    .padding(14.dp)
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    Text(
+                                        text = if (isMonthRolledOver) "New Month! Set Budget & Days" else "Set Monthly Budget & Target Days",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Black,
+                                        color = textPrimary
+                                    )
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        OutlinedTextField(
+                                            value = budgetInputText,
+                                            onValueChange = { budgetInputText = it.filter { ch -> ch.isDigit() } },
+                                            label = { Text("Budget", fontWeight = FontWeight.Bold) },
+                                            prefix = { Text("₹", fontWeight = FontWeight.Bold, color = textPrimary) },
+                                            placeholder = { Text("10000") },
+                                            singleLine = true,
+                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                            shape = RoundedCornerShape(10.dp),
+                                            colors = OutlinedTextFieldDefaults.colors(
+                                                focusedTextColor = textPrimary,
+                                                unfocusedTextColor = textPrimary,
+                                                focusedBorderColor = NeobrutalBlack,
+                                                unfocusedBorderColor = NeobrutalBlack.copy(alpha = 0.6f),
+                                                focusedContainerColor = if (isDark) DarkCardBg else NeobrutalWhite,
+                                                unfocusedContainerColor = if (isDark) DarkCardBg else NeobrutalWhite
+                                            ),
+                                            modifier = Modifier.weight(1.2f)
+                                        )
+
+                                        OutlinedTextField(
+                                            value = targetDaysInputText,
+                                            onValueChange = { targetDaysInputText = it.filter { ch -> ch.isDigit() } },
+                                            label = { Text("Days Left", fontWeight = FontWeight.Bold) },
+                                            placeholder = { Text("$defaultDaysRemaining") },
+                                            singleLine = true,
+                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                            shape = RoundedCornerShape(10.dp),
+                                            colors = OutlinedTextFieldDefaults.colors(
+                                                focusedTextColor = textPrimary,
+                                                unfocusedTextColor = textPrimary,
+                                                focusedBorderColor = NeobrutalBlack,
+                                                unfocusedBorderColor = NeobrutalBlack.copy(alpha = 0.6f),
+                                                focusedContainerColor = if (isDark) DarkCardBg else NeobrutalWhite,
+                                                unfocusedContainerColor = if (isDark) DarkCardBg else NeobrutalWhite
+                                            ),
+                                            modifier = Modifier.weight(0.8f)
+                                        )
+                                    }
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.End,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        if (initialMonthlyAllocation > 0) {
+                                            TextButton(
+                                                onClick = { isEditingBudget = false },
+                                                contentPadding = PaddingValues(horizontal = 8.dp)
+                                            ) {
+                                                Text("Cancel", fontWeight = FontWeight.Bold, color = textMuted)
+                                            }
+
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                        }
+
+                                        NeobrutalButton(
+                                            onClick = {
+                                                val enteredBudget = budgetInputText.toDoubleOrNull()
+                                                if (enteredBudget != null && enteredBudget > 0) {
+                                                    viewModel.setInitialMonthlyAllocation(enteredBudget)
+                                                }
+                                                val enteredDays = targetDaysInputText.toIntOrNull()
+                                                if (enteredDays != null && enteredDays > 0) {
+                                                    customTargetDays = enteredDays
+                                                }
+                                                isEditingBudget = false
+                                            },
+                                            backgroundColor = MintGreen,
+                                            contentColor = NeobrutalBlack,
+                                            borderColor = NeobrutalBlack,
+                                            borderWidth = 2.dp,
+                                            shadowOffset = 2.dp,
+                                            cornerRadius = 8.dp,
+                                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
+                                        ) {
+                                            Text(
+                                                text = "Save Budget",
+                                                fontWeight = FontWeight.Black,
+                                                style = MaterialTheme.typography.labelLarge
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Prominent "Safe Daily Pacing" Metric Hero Block
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(22.dp)
-                                .clip(RoundedCornerShape(11.dp))
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(
+                                    when (healthStatus) {
+                                        FinancialHealthStatus.ON_TRACK -> if (isDark) Color(0xFF16382A) else Color(0xFFEDFDF5)
+                                        FinancialHealthStatus.PACING_FAST -> if (isDark) Color(0xFF382C14) else Color(0xFFFFFBEB)
+                                        FinancialHealthStatus.OVER_BUDGET -> if (isDark) Color(0xFF381717) else Color(0xFFFEF2F2)
+                                    }
+                                )
+                                .border(BorderStroke(2.5.dp, NeobrutalBlack), RoundedCornerShape(14.dp))
+                                .padding(horizontal = 16.dp, vertical = 14.dp)
+                        ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Text(
+                                        text = "₹$formattedSafeDailySpend",
+                                        style = MaterialTheme.typography.headlineMedium,
+                                        fontWeight = FontWeight.Black,
+                                        color = textPrimary
+                                    )
+                                    Text(
+                                        text = "/ day safe to spend",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Black,
+                                        color = when (healthStatus) {
+                                            FinancialHealthStatus.ON_TRACK -> if (isDark) Color(0xFF86EFAC) else Color(0xFF16A34A)
+                                            FinancialHealthStatus.PACING_FAST -> if (isDark) Color(0xFFFCD34D) else Color(0xFFD97706)
+                                            FinancialHealthStatus.OVER_BUDGET -> if (isDark) Color(0xFFFCA5A5) else Color(0xFFDC2626)
+                                        }
+                                    )
+                                }
+
+                                Text(
+                                    text = "₹$formattedRemainingBudget remaining for $daysRemaining days",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = textMuted
+                                )
+                            }
+                        }
+
+                        // Horizontal Progress Bar with Thick Black Border
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(20.dp)
+                                .clip(RoundedCornerShape(10.dp))
                                 .background(if (isDark) Color(0xFF374151) else Color(0xFFE2E8F0))
-                                .border(BorderStroke(2.5.dp, NeobrutalBlack), RoundedCornerShape(11.dp))
+                                .border(BorderStroke(2.5.dp, NeobrutalBlack), RoundedCornerShape(10.dp))
                         ) {
                             if (budgetProgress > 0f) {
                                 Box(
@@ -377,79 +497,47 @@ fun StudentScreen(
                                         .fillMaxHeight()
                                         .clip(
                                             RoundedCornerShape(
-                                                topStart = 9.dp,
-                                                bottomStart = 9.dp,
-                                                topEnd = if (budgetProgress >= 0.95f) 9.dp else 0.dp,
-                                                bottomEnd = if (budgetProgress >= 0.95f) 9.dp else 0.dp
+                                                topStart = 8.dp,
+                                                bottomStart = 8.dp,
+                                                topEnd = if (budgetProgress >= 0.95f) 8.dp else 0.dp,
+                                                bottomEnd = if (budgetProgress >= 0.95f) 8.dp else 0.dp
                                             )
                                         )
-                                        .background(Color(0xFF22C55E)) // Vibrant green
+                                        .background(
+                                            when (healthStatus) {
+                                                FinancialHealthStatus.ON_TRACK -> Color(0xFF22C55E)
+                                                FinancialHealthStatus.PACING_FAST -> Color(0xFFF59E0B)
+                                                FinancialHealthStatus.OVER_BUDGET -> Color(0xFFEF4444)
+                                            }
+                                        )
                                         .border(BorderStroke(1.dp, NeobrutalBlack))
                                 )
                             }
                         }
 
-                        // Text Row Dynamically Displaying Remaining Budget
+                        // Subtitle row displaying spent and usage percentage
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "₹${remainingBudget.toInt()} Remaining",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Black,
-                                color = textPrimary
-                            )
-
-                            Text(
                                 text = if (initialMonthlyAllocation > 0) {
-                                    "₹${currentSpending.toInt()} Spent / ₹${initialMonthlyAllocation.toInt()}"
+                                    "₹${currentSpending.toInt()} Spent of ₹${initialMonthlyAllocation.toInt()} Budget"
                                 } else {
-                                    "₹${currentSpending.toInt()} Spent (Set Allocation)"
+                                    "₹${currentSpending.toInt()} Spent (Budget not set)"
                                 },
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = textMuted
                             )
-                        }
 
-                        // Highlighted Actionable Insight Block
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(PastelYellow)
-                                .border(BorderStroke(2.dp, NeobrutalBlack), RoundedCornerShape(12.dp))
-                                .padding(horizontal = 14.dp, vertical = 10.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(30.dp)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(NeobrutalWhite)
-                                        .border(1.5.dp, NeobrutalBlack, RoundedCornerShape(8.dp)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Lightbulb,
-                                        contentDescription = null,
-                                        tint = NeobrutalBlack,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-
-                                Text(
-                                    text = "You can spend ₹$formattedDailySpend per day for the rest of the month",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = FontWeight.Black,
-                                    color = NeobrutalBlack
-                                )
-                            }
+                            Text(
+                                text = "${(budgetProgress * 100).toInt()}% Used",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Black,
+                                color = textPrimary
+                            )
                         }
                     }
                 }
