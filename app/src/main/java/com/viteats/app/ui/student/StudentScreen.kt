@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -486,25 +487,18 @@ fun StudentScreen(
                                 fontWeight = FontWeight.Black,
                                 color = textPrimary
                             )
-
-                            NeobrutalPill(
-                                text = "Meal Stats",
-                                backgroundColor = SoftCyan,
-                                textColor = NeobrutalBlack,
-                                isSelected = false
-                            )
                         }
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(20.dp),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             // Custom Donut Chart
                             NeobrutalExpenseDonutChart(
                                 categories = expenseCategories,
-                                modifier = Modifier.size(130.dp),
-                                strokeWidth = 22.dp
+                                modifier = Modifier.size(120.dp),
+                                strokeWidth = 20.dp
                             ) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Text(
@@ -517,7 +511,9 @@ fun StudentScreen(
                                         text = "₹${categorySpending.totalSpent.toInt()}",
                                         style = MaterialTheme.typography.labelLarge,
                                         fontWeight = FontWeight.Black,
-                                        color = textPrimary
+                                        color = textPrimary,
+                                        maxLines = 1,
+                                        softWrap = false
                                     )
                                 }
                             }
@@ -525,7 +521,7 @@ fun StudentScreen(
                             // Bold Legend
                             Column(
                                 modifier = Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
                                 expenseCategories.forEach { cat ->
                                     val pct = when (cat.name) {
@@ -542,38 +538,46 @@ fun StudentScreen(
                                     ) {
                                         Row(
                                             verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            modifier = Modifier.weight(1f, fill = false)
                                         ) {
                                             Box(
                                                 modifier = Modifier
-                                                    .size(14.dp)
-                                                    .clip(RoundedCornerShape(4.dp))
+                                                    .size(12.dp)
+                                                    .clip(RoundedCornerShape(3.dp))
                                                     .background(cat.color)
-                                                    .border(1.5.dp, NeobrutalBlack, RoundedCornerShape(4.dp))
+                                                    .border(1.5.dp, NeobrutalBlack, RoundedCornerShape(3.dp))
                                             )
                                             Text(
                                                 text = cat.name,
                                                 style = MaterialTheme.typography.bodyMedium,
                                                 fontWeight = FontWeight.Bold,
-                                                color = textPrimary
+                                                color = textPrimary,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
                                             )
                                         }
 
                                         Row(
                                             verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            modifier = Modifier.padding(start = 8.dp)
                                         ) {
                                             Text(
                                                 text = "₹${cat.amount.toInt()}",
                                                 style = MaterialTheme.typography.bodySmall,
                                                 fontWeight = FontWeight.SemiBold,
-                                                color = textMuted
+                                                color = textMuted,
+                                                maxLines = 1,
+                                                softWrap = false
                                             )
                                             Text(
                                                 text = "$pct%",
                                                 style = MaterialTheme.typography.labelLarge,
                                                 fontWeight = FontWeight.Black,
-                                                color = textPrimary
+                                                color = textPrimary,
+                                                maxLines = 1,
+                                                softWrap = false
                                             )
                                         }
                                     }
