@@ -202,7 +202,6 @@ fun StudentScreen(
                 val isMonthRolledOver by viewModel.isMonthRolledOver.collectAsState()
 
                 var isEditingBudget by remember { mutableStateOf(isMonthRolledOver || initialMonthlyAllocation <= 0.0) }
-                var customTargetDays by remember { mutableStateOf<Int?>(null) }
 
                 // --- Dynamic "Financial Health" Dashboard Card ---
                 val remainingBudget = balance.bal
@@ -214,18 +213,17 @@ fun StudentScreen(
                 val yearMonth = remember(today) { YearMonth.from(today) }
                 val daysInMonth = remember(yearMonth) { yearMonth.lengthOfMonth() }
                 val currentDay = remember(today) { today.dayOfMonth }
-                val defaultDaysRemaining = remember(daysInMonth, currentDay) { (daysInMonth - currentDay + 1).coerceAtLeast(1) }
-                val daysRemaining = customTargetDays ?: defaultDaysRemaining
-                val safeDailySpend = remember(remainingBudget, daysRemaining) {
-                    if (daysRemaining > 0) (remainingBudget / daysRemaining).coerceAtLeast(0.0) else 0.0
+                val daysLeftInMonth = remember(daysInMonth, currentDay) { (daysInMonth - currentDay + 1).coerceAtLeast(1) }
+                val safeDailySpend = remember(remainingBudget, daysLeftInMonth) {
+                    if (daysLeftInMonth > 0) (remainingBudget / daysLeftInMonth).coerceAtLeast(0.0) else 0.0
                 }
                 val daysPassed = remember(currentDay) { currentDay.coerceAtLeast(1) }
                 val currentDailyAverage = remember(currentSpending, daysPassed) {
                     if (daysPassed > 0) (currentSpending / daysPassed).coerceAtLeast(0.0) else 0.0
                 }
 
-                val healthStatus = remember(safeDailySpend, currentDailyAverage, remainingBudget) {
-                    if (remainingBudget <= 0.0 || safeDailySpend <= 0.0 || currentDailyAverage > safeDailySpend * 1.20) {
+                val healthStatus = remember(safeDailySpend, currentDailyAverage, remainingBudget, initialMonthlyAllocation, currentSpending) {
+                    if (remainingBudget <= 0.0 || (initialMonthlyAllocation > 0 && currentSpending >= initialMonthlyAllocation) || currentDailyAverage > safeDailySpend * 1.20) {
                         FinancialHealthStatus.OVER_BUDGET
                     } else if (currentDailyAverage > safeDailySpend) {
                         FinancialHealthStatus.PACING_FAST
@@ -322,9 +320,6 @@ fun StudentScreen(
                             var budgetInputText by remember(initialMonthlyAllocation) {
                                 mutableStateOf(if (initialMonthlyAllocation > 0) initialMonthlyAllocation.toInt().toString() else "")
                             }
-                            var targetDaysInputText by remember(daysRemaining) {
-                                mutableStateOf(daysRemaining.toString())
-                            }
 
                             Box(
                                 modifier = Modifier
@@ -336,7 +331,7 @@ fun StudentScreen(
                             ) {
                                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                     Text(
-                                        text = if (isMonthRolledOver) "New Month! Set Budget & Days" else "Set Monthly Budget & Target Days",
+                                        text = if (isMonthRolledOver) "New Month! Set Monthly Budget" else "Set Monthly Budget",
                                         style = MaterialTheme.typography.titleSmall,
                                         fontWeight = FontWeight.Black,
                                         color = textPrimary
@@ -352,7 +347,7 @@ fun StudentScreen(
                                             onValueChange = { budgetInputText = it.filter { ch -> ch.isDigit() } },
                                             label = { Text("Budget", fontWeight = FontWeight.Bold) },
                                             prefix = { Text("₹", fontWeight = FontWeight.Bold, color = textPrimary) },
-                                            placeholder = { Text("10000") },
+                                            placeholder = { Text("8000") },
                                             singleLine = true,
                                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                             shape = RoundedCornerShape(10.dp),
@@ -364,54 +359,14 @@ fun StudentScreen(
                                                 focusedContainerColor = if (isDark) DarkCardBg else NeobrutalWhite,
                                                 unfocusedContainerColor = if (isDark) DarkCardBg else NeobrutalWhite
                                             ),
-                                            modifier = Modifier.weight(1.2f)
+                                            modifier = Modifier.weight(1f)
                                         )
-
-                                        OutlinedTextField(
-                                            value = targetDaysInputText,
-                                            onValueChange = { targetDaysInputText = it.filter { ch -> ch.isDigit() } },
-                                            label = { Text("Days Left", fontWeight = FontWeight.Bold) },
-                                            placeholder = { Text("$defaultDaysRemaining") },
-                                            singleLine = true,
-                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                            shape = RoundedCornerShape(10.dp),
-                                            colors = OutlinedTextFieldDefaults.colors(
-                                                focusedTextColor = textPrimary,
-                                                unfocusedTextColor = textPrimary,
-                                                focusedBorderColor = NeobrutalBlack,
-                                                unfocusedBorderColor = NeobrutalBlack.copy(alpha = 0.6f),
-                                                focusedContainerColor = if (isDark) DarkCardBg else NeobrutalWhite,
-                                                unfocusedContainerColor = if (isDark) DarkCardBg else NeobrutalWhite
-                                            ),
-                                            modifier = Modifier.weight(0.8f)
-                                        )
-                                    }
-
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.End,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        if (initialMonthlyAllocation > 0) {
-                                            TextButton(
-                                                onClick = { isEditingBudget = false },
-                                                contentPadding = PaddingValues(horizontal = 8.dp)
-                                            ) {
-                                                Text("Cancel", fontWeight = FontWeight.Bold, color = textMuted)
-                                            }
-
-                                            Spacer(modifier = Modifier.width(6.dp))
-                                        }
 
                                         NeobrutalButton(
                                             onClick = {
                                                 val enteredBudget = budgetInputText.toDoubleOrNull()
                                                 if (enteredBudget != null && enteredBudget > 0) {
                                                     viewModel.setInitialMonthlyAllocation(enteredBudget)
-                                                }
-                                                val enteredDays = targetDaysInputText.toIntOrNull()
-                                                if (enteredDays != null && enteredDays > 0) {
-                                                    customTargetDays = enteredDays
                                                 }
                                                 isEditingBudget = false
                                             },
@@ -421,13 +376,22 @@ fun StudentScreen(
                                             borderWidth = 2.dp,
                                             shadowOffset = 2.dp,
                                             cornerRadius = 8.dp,
-                                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
+                                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp)
                                         ) {
                                             Text(
-                                                text = "Save Budget",
+                                                text = "Save",
                                                 fontWeight = FontWeight.Black,
                                                 style = MaterialTheme.typography.labelLarge
                                             )
+                                        }
+
+                                        if (initialMonthlyAllocation > 0) {
+                                            TextButton(
+                                                onClick = { isEditingBudget = false },
+                                                contentPadding = PaddingValues(horizontal = 6.dp)
+                                            ) {
+                                                Text("Cancel", fontWeight = FontWeight.Bold, color = textMuted)
+                                            }
                                         }
                                     }
                                 }
@@ -473,7 +437,7 @@ fun StudentScreen(
                                 }
 
                                 Text(
-                                    text = "₹$formattedRemainingBudget remaining for $daysRemaining days",
+                                    text = "₹$formattedRemainingBudget total remaining",
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = textMuted
