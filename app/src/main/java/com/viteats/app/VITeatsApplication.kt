@@ -1,6 +1,8 @@
 package com.viteats.app
 
 import android.app.Application
+import coil.ImageLoader
+import coil.ImageLoaderFactory
 import com.viteats.app.data.SessionManager
 import com.viteats.app.data.remote.NetworkModule
 import com.viteats.app.data.repository.AuthRepository
@@ -8,12 +10,16 @@ import com.viteats.app.data.repository.MenuRepository
 import com.viteats.app.data.repository.OrderRepository
 import com.viteats.app.data.repository.StudentRepository
 
-class VITeatsApplication : Application() {
+class VITeatsApplication : Application(), ImageLoaderFactory {
     lateinit var sessionManager: SessionManager
     lateinit var authRepository: AuthRepository
     lateinit var studentRepository: StudentRepository
     lateinit var menuRepository: MenuRepository
     lateinit var orderRepository: OrderRepository
+    lateinit var cartRepository: com.viteats.app.data.repository.CartRepository
+    lateinit var favouritesManager: com.viteats.app.data.FavouritesManager
+    lateinit var themeManager: com.viteats.app.data.ThemeManager
+    lateinit var budgetManager: com.viteats.app.data.BudgetManager
 
     override fun onCreate() {
         super.onCreate()
@@ -23,5 +29,16 @@ class VITeatsApplication : Application() {
         studentRepository = StudentRepository(api, sessionManager)
         menuRepository = MenuRepository(api, sessionManager)
         orderRepository = OrderRepository(api, sessionManager)
+        cartRepository = com.viteats.app.data.repository.CartRepository()
+        favouritesManager = com.viteats.app.data.FavouritesManager(this)
+        themeManager = com.viteats.app.data.ThemeManager(this)
+        budgetManager = com.viteats.app.data.BudgetManager(this)
+    }
+
+    override fun newImageLoader(): ImageLoader {
+        return ImageLoader.Builder(this)
+            .okHttpClient(NetworkModule.okHttpClient)
+            .crossfade(true)
+            .build()
     }
 }

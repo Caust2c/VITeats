@@ -4,6 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.rememberNavController
 import com.viteats.app.ui.navigation.NavGraph
@@ -15,9 +17,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            VITeatsTheme {
+            val application = LocalContext.current.applicationContext as VITeatsApplication
+            val isDarkMode by application.themeManager.isDarkMode.collectAsState()
+
+            VITeatsTheme(darkTheme = isDarkMode) {
                 val navController = rememberNavController()
-                val application = LocalContext.current.applicationContext as VITeatsApplication
                 
                 val startDestination = if (application.authRepository.isLoggedIn()) {
                     Screen.Home.route

@@ -23,6 +23,7 @@ class AuthRepository(
                 if (parts.size > 6) {
                     sessionManager.userIdentifier = parts[6]
                 }
+                sessionManager.cachedPin = otpNo
             } else {
                 // Strictly return error if OtpSts does not start with "duplicate"
                 return Response.error(401, "{\"error\":\"Invalid PIN\"}".toResponseBody("application/json".toMediaTypeOrNull()))
@@ -31,9 +32,13 @@ class AuthRepository(
         return response
     }
 
+    fun getCachedPin(): String? = sessionManager.cachedPin
+
+    fun getRegistrationNumber(): String? = sessionManager.registrationNumber
+
     fun logout() {
         sessionManager.clear()
     }
 
-    fun isLoggedIn(): Boolean = sessionManager.registrationNumber != null
+    fun isLoggedIn(): Boolean = sessionManager.hasValidSession()
 }

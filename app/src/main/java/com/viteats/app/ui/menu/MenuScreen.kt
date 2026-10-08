@@ -1,70 +1,558 @@
 package com.viteats.app.ui.menu
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.viteats.app.data.remote.MenuItem
+import com.viteats.app.ui.components.NeobrutalButton
+import com.viteats.app.ui.components.NeobrutalCard
+import com.viteats.app.ui.components.NeobrutalPill
+import com.viteats.app.ui.theme.*
 
 @Composable
-fun MenuScreen(viewModel: MenuViewModel) {
+fun MenuScreen(
+    viewModel: MenuViewModel,
+    onNavigateToCart: () -> Unit = {}
+) {
     val menuState by viewModel.menuState.collectAsState()
-    var selectedCategory by remember { mutableStateOf("All") }
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val selectedCategory by viewModel.selectedCategory.collectAsState()
+    val cartItems by viewModel.cartItems.collectAsState()
+    val favouriteIds by viewModel.favouriteItemIds.collectAsState()
+    val isDark = LocalDarkTheme.current
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        when (val state = menuState) {
-            is MenuState.Loading -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+    val screenBg = if (isDark) DarkCharcoalBg else LavenderBackground
+    val cardBg = if (isDark) DarkCardBg else NeobrutalWhite
+    val textPrimary = if (isDark) DarkTextPrimary else NeobrutalBlack
+    val textMuted = if (isDark) DarkTextSecondary else MutedText
+
+    val totalCartCount = remember(cartItems) { cartItems.sumOf { it.quantity } }
+    val totalCartAmount = remember(cartItems) { cartItems.sumOf { it.lineTotal } }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(screenBg)
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Neobrutal Search Bar
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                NeobrutalCard(
+                    backgroundColor = cardBg,
+                    borderColor = NeobrutalBlack,
+                    borderWidth = 2.dp,
+                    shadowOffset = 3.dp,
+                    cornerRadius = 14.dp
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .padding(horizontal = 14.dp, vertical = 10.dp)
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Search",
+                            tint = textPrimary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Box(modifier = Modifier.weight(1f)) {
+                            if (searchQuery.isEmpty()) {
+                                Text(
+                                    text = "Search dishes, combos, outlets...",
+                                    color = textMuted,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                            BasicTextField(
+                                value = searchQuery,
+                                onValueChange = { viewModel.onSearchQueryChanged(it) },
+                                singleLine = true,
+                                textStyle = MaterialTheme.typography.bodyMedium.copy(
+                                    color = textPrimary,
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(
+                                onClick = { viewModel.onSearchQueryChanged("") },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Clear,
+                                    contentDescription = "Clear",
+                                    tint = textPrimary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
                 }
             }
-            is MenuState.Success -> {
-                val categories = listOf("All") + state.categories.map { it.skname }.distinct()
-                
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+
+            when (val state = menuState) {
+                is MenuState.Loading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = if (isDark) PastelYellow else NeobrutalBlack)
+                    }
+                }
+                is MenuState.Success -> {
+                    val categories = remember(state.categories) {
+                        listOf("All", "Favourites") + state.categories.map { it.skname }.distinct()
+                    }
+
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(categories) { category ->
+                            val isSelected = selectedCategory == category
+                            val isFavCategory = category == "Favourites"
+                            val pillBg = if (isSelected) MintGreen else cardBg
+                            val pillText = if (isSelected) NeobrutalBlack else textPrimary
+
+                            NeobrutalPill(
+                                text = if (isFavCategory) "♥ Favourites" else category,
+                                backgroundColor = pillBg,
+                                textColor = pillText,
+                                isSelected = isSelected,
+                                onClick = { viewModel.onCategorySelected(category) }
+                            )
+                        }
+                    }
+
+                    val filteredItems = remember(state.items, selectedCategory, searchQuery, favouriteIds) {
+                        state.items.filter { item ->
+                            val matchesCategory = when (selectedCategory) {
+                                "All" -> true
+                                "Favourites" -> favouriteIds.contains(item.meitid)
+                                else -> item.skudes.equals(selectedCategory, ignoreCase = true)
+                            }
+                            val matchesQuery = searchQuery.isBlank() ||
+                                    item.meitdes.contains(searchQuery, ignoreCase = true) ||
+                                    item.dispname.contains(searchQuery, ignoreCase = true) ||
+                                    item.skudes.contains(searchQuery, ignoreCase = true)
+                            matchesCategory && matchesQuery
+                        }
+                    }
+
+                    if (filteredItems.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            NeobrutalCard(
+                                backgroundColor = cardBg,
+                                shadowOffset = 4.dp
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(24.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Icon(
+                                        imageVector = if (selectedCategory == "Favourites") Icons.Default.FavoriteBorder else Icons.Default.SearchOff,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(48.dp),
+                                        tint = if (selectedCategory == "Favourites") Color(0xFFEF4444) else textPrimary
+                                    )
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    Text(
+                                        text = if (selectedCategory == "Favourites") "No Favourites Yet"
+                                        else if (searchQuery.isNotBlank()) "No items found matching \"$searchQuery\""
+                                        else "No items in this category",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = textPrimary
+                                    )
+                                    if (selectedCategory == "Favourites") {
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        Text(
+                                            text = "Tap the heart icon on any food item to save your favorite dishes here.",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = textMuted
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(
+                                start = 16.dp,
+                                end = 16.dp,
+                                top = 8.dp,
+                                bottom = if (totalCartCount > 0) 96.dp else 24.dp
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(14.dp)
+                        ) {
+                            items(filteredItems, key = { it.meitid }) { item ->
+                                val inCartQty = cartItems.find { it.item.meitid == item.meitid }?.quantity ?: 0
+                                val isFav = favouriteIds.contains(item.meitid)
+                                MenuItemCard(
+                                    item = item,
+                                    quantityInCart = inCartQty,
+                                    isFavourite = isFav,
+                                    onToggleFavourite = { viewModel.toggleFavourite(item) },
+                                    onAddToCart = { viewModel.addToCart(item) },
+                                    onDecrement = { viewModel.decrementItem(item) }
+                                )
+                            }
+                        }
+                    }
+                }
+                is MenuState.Error -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        NeobrutalCard(
+                            backgroundColor = SoftCoral,
+                            shadowOffset = 4.dp,
+                            modifier = Modifier.padding(24.dp)
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.padding(24.dp)
+                            ) {
+                                Text(
+                                    text = state.message,
+                                    color = NeobrutalBlack,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                NeobrutalButton(
+                                    onClick = { viewModel.fetchMenu() },
+                                    backgroundColor = NeobrutalWhite
+                                ) {
+                                    Text("Retry", fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- Floating Neobrutal Cart Bar ---
+        AnimatedVisibility(
+            visible = totalCartCount > 0,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(16.dp),
+            enter = slideInVertically(initialOffsetY = { it }),
+            exit = slideOutVertically(targetOffsetY = { it })
+        ) {
+            NeobrutalCard(
+                backgroundColor = PastelYellow,
+                borderColor = NeobrutalBlack,
+                borderWidth = 2.5.dp,
+                shadowOffset = 5.dp,
+                cornerRadius = 18.dp,
+                onClick = onNavigateToCart
+            ) {
+                Row(
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp, vertical = 14.dp)
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    items(categories) { category ->
-                        FilterChip(
-                            selected = selectedCategory == category,
-                            onClick = { selectedCategory = category },
-                            label = { Text(category) }
+                    Column {
+                        Text(
+                            text = "$totalCartCount item${if (totalCartCount > 1) "s" else ""} added",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = NeobrutalBlack
+                        )
+                        Text(
+                            text = "₹${"%.2f".format(totalCartAmount)}",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Black,
+                            color = NeobrutalBlack
+                        )
+                    }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MintGreen)
+                            .border(BorderStroke(2.dp, NeobrutalBlack), RoundedCornerShape(12.dp))
+                            .padding(horizontal = 14.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = "View Cart",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Black,
+                            color = NeobrutalBlack
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = "Cart",
+                            tint = NeobrutalBlack,
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
+            }
+        }
+    }
+}
 
-                val filteredItems = if (selectedCategory == "All") {
-                    state.items
-                } else {
-                    state.items.filter { it.skudes == selectedCategory }
-                }
+@Composable
+fun MenuItemCard(
+    item: MenuItem,
+    quantityInCart: Int = 0,
+    isFavourite: Boolean = false,
+    onToggleFavourite: () -> Unit = {},
+    onAddToCart: () -> Unit = {},
+    onDecrement: () -> Unit = {}
+) {
+    val isOutOfStock = item.StockQty <= 0
+    val isDark = LocalDarkTheme.current
 
-                LazyColumn(
+    val cardBg = if (isDark) DarkCardBg else NeobrutalWhite
+    val textPrimary = if (isDark) DarkTextPrimary else NeobrutalBlack
+    val textMuted = if (isDark) DarkTextSecondary else MutedText
+
+    NeobrutalCard(
+        backgroundColor = if (isOutOfStock) cardBg.copy(alpha = 0.8f) else cardBg,
+        borderColor = NeobrutalBlack,
+        borderWidth = 2.dp,
+        shadowOffset = if (isOutOfStock) 2.dp else 4.dp,
+        cornerRadius = 16.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(12.dp)
+                .fillMaxWidth()
+                .alpha(if (isOutOfStock) 0.65f else 1.0f)
+        ) {
+            // Food Image with status overlay & favorite button
+            Box(
+                modifier = Modifier
+                    .size(96.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(if (isDark) Color(0xFF374151) else LavenderBackground)
+                    .border(BorderStroke(2.dp, NeobrutalBlack), RoundedCornerShape(12.dp))
+            ) {
+                AsyncImage(
+                    model = item.imageUrl,
+                    contentDescription = item.meitdes,
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    items(filteredItems) { item ->
-                        MenuItemCard(item = item)
+                    contentScale = ContentScale.Crop
+                )
+
+                if (isOutOfStock) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .background(Color.Black.copy(alpha = 0.8f))
+                            .padding(vertical = 2.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "SOLD OUT",
+                            color = Color.White,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Black
+                        )
                     }
                 }
             }
-            is MenuState.Error -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text = state.message, color = MaterialTheme.colorScheme.error)
-                        Button(onClick = { viewModel.fetchMenu() }) {
-                            Text("Retry")
+
+            Spacer(modifier = Modifier.width(14.dp))
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 96.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Text(
+                            text = item.meitdes,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Black,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            color = textPrimary,
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        // Heart Toggle Button
+                        IconButton(
+                            onClick = onToggleFavourite,
+                            modifier = Modifier
+                                .size(28.dp)
+                                .offset(x = 4.dp, y = (-4).dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isFavourite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = if (isFavourite) "Remove favourite" else "Add favourite",
+                                tint = if (isFavourite) Color(0xFFEF4444) else textPrimary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    Text(
+                        text = "${item.dispname} · ${item.skudes}",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
+                        color = textMuted
+                    )
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(SoftCyan)
+                                .border(BorderStroke(1.dp, NeobrutalBlack), RoundedCornerShape(6.dp))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = item.odtdes,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = NeobrutalBlack,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        if (!isOutOfStock && item.StockQty in 1..5) {
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Only ${item.StockQty} left",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color(0xFFC2410C),
+                                fontWeight = FontWeight.Black
+                            )
+                        }
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "₹${"%.2f".format(item.retrt)}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Black,
+                        color = NeobrutalBlack
+                    )
+
+                    if (isOutOfStock) {
+                        Text(
+                            text = "Unavailable",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MutedText
+                        )
+                    } else if (quantityInCart == 0) {
+                        NeobrutalButton(
+                            onClick = onAddToCart,
+                            backgroundColor = PastelYellow,
+                            borderWidth = 1.5.dp,
+                            shadowOffset = 2.dp,
+                            cornerRadius = 8.dp,
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp), tint = NeobrutalBlack)
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Text("ADD", fontWeight = FontWeight.Black, style = MaterialTheme.typography.labelMedium)
+                        }
+                    } else {
+                        // Neobrutal Stepper
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(MintGreen)
+                                .border(BorderStroke(1.5.dp, NeobrutalBlack), RoundedCornerShape(8.dp))
+                                .padding(horizontal = 2.dp, vertical = 1.dp)
+                        ) {
+                            IconButton(
+                                onClick = onDecrement,
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (quantityInCart == 1) Icons.Default.Delete else Icons.Default.Remove,
+                                    contentDescription = "Decrease",
+                                    modifier = Modifier.size(14.dp),
+                                    tint = NeobrutalBlack
+                                )
+                            }
+
+                            Text(
+                                text = "$quantityInCart",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Black,
+                                color = NeobrutalBlack,
+                                modifier = Modifier.padding(horizontal = 6.dp)
+                            )
+
+                            IconButton(
+                                onClick = onAddToCart,
+                                modifier = Modifier.size(24.dp),
+                                enabled = quantityInCart < item.StockQty
+                            ) {
+                                Icon(
+                                    Icons.Default.Add,
+                                    contentDescription = "Increase",
+                                    modifier = Modifier.size(14.dp),
+                                    tint = NeobrutalBlack
+                                )
+                            }
                         }
                     }
                 }
@@ -73,80 +561,4 @@ fun MenuScreen(viewModel: MenuViewModel) {
     }
 }
 
-@Composable
-fun MenuItemCard(item: MenuItem) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(12.dp)
-                .height(100.dp)
-        ) {
-            AsyncImage(
-                model = item.imageUrl,
-                contentDescription = item.meitdes,
-                modifier = Modifier
-                    .size(100.dp)
-                    .aspectRatio(1f),
-                contentScale = ContentScale.Crop
-            )
-            
-            Spacer(modifier = Modifier.width(16.dp))
-            
-            Column(
-                modifier = Modifier.fillMaxHeight(),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text(
-                        text = item.meitdes,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = "${item.dispname} · ${item.skudes}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = item.odtdes,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.secondary
-                    )
-                }
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "₹${item.retrt}",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    
-                    if (item.StockQty > 0) {
-                        Text(
-                            text = "Available: ${item.StockQty}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.tertiary
-                        )
-                    } else {
-                        Text(
-                            text = "OUT OF STOCK",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.error,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
+
