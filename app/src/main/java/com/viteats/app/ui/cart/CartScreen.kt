@@ -48,6 +48,10 @@ fun CartScreen(
     var showPinDialog by remember { mutableStateOf(false) }
     var enteredPin by remember { mutableStateOf(app.sessionManager.cachedPin ?: "") }
     var pinError by remember { mutableStateOf<String?>(null) }
+    val orderingConfig by app.autoOrderSettings.config.collectAsState()
+    LaunchedEffect(Unit) { app.autoOrderSettings.refresh() }
+    var showBudgetPrompt by remember { mutableStateOf(false) }
+    var approvedTotal by remember { mutableStateOf<Double?>(null) }
 
     val totalAmount = remember(cartItems) { cartItems.sumOf { it.lineTotal } }
     val totalCount = remember(cartItems) { cartItems.sumOf { it.quantity } }
@@ -148,7 +152,10 @@ fun CartScreen(
                         NeobrutalButton(
                             onClick = {
                                 enteredPin = app.sessionManager.cachedPin ?: ""
-                                showPinDialog = true
+                                approvedTotal = null
+                                if (com.viteats.app.data.OrderingPolicy.exceedsLimit(totalAmount, orderingConfig.hardLimit)) {
+                                    showBudgetPrompt = true
+                                } else showPinDialog = true
                             },
                             backgroundColor = MintGreen,
                             contentColor = NeobrutalBlack,
@@ -287,6 +294,8 @@ fun CartScreen(
                                 ) {
                                     AsyncImage(
                                         model = cartItem.item.imageUrl,
+                                        placeholder = androidx.compose.ui.res.painterResource(com.viteats.app.R.drawable.food_placeholder),
+                                        error = androidx.compose.ui.res.painterResource(com.viteats.app.R.drawable.food_placeholder),
                                         contentDescription = cartItem.item.meitdes,
                                         modifier = Modifier.fillMaxSize(),
                                         contentScale = ContentScale.Crop
@@ -420,6 +429,18 @@ fun CartScreen(
         }
     }
 
+    if (showBudgetPrompt) {
+        AlertDialog(onDismissRequest = { showBudgetPrompt = false },
+            title = { Text("Hard budget limit exceeded") },
+            text = { Text("This cart costs ₹${"%.2f".format(totalAmount)}. Your per-order limit is ₹${"%.2f".format(orderingConfig.hardLimit)}. Continue for this order?") },
+            confirmButton = { TextButton(onClick = {
+                approvedTotal = totalAmount
+                showBudgetPrompt = false
+                showPinDialog = true
+            }) { Text("Continue once") } },
+            dismissButton = { TextButton(onClick = { showBudgetPrompt = false }) { Text("Edit cart") } })
+    }
+
     // PIN Confirmation Dialog
     if (showPinDialog) {
         AlertDialog(
@@ -477,7 +498,7 @@ fun CartScreen(
                             pinError = "Please enter your PIN"
                         } else {
                             showPinDialog = false
-                            viewModel.checkout(enteredPin)
+                            viewModel.checkout(enteredPin, budgetOverride = approvedTotal == totalAmount)
                         }
                     },
                     backgroundColor = MintGreen,

@@ -373,6 +373,8 @@ fun MenuItemCard(
             ) {
                 AsyncImage(
                     model = item.imageUrl,
+                    placeholder = androidx.compose.ui.res.painterResource(com.viteats.app.R.drawable.food_placeholder),
+                    error = androidx.compose.ui.res.painterResource(com.viteats.app.R.drawable.food_placeholder),
                     contentDescription = item.meitdes,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop

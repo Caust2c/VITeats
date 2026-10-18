@@ -16,6 +16,7 @@ object NetworkModule {
     private class SimpleCookieJar : CookieJar {
         private val cookieStore = mutableMapOf<String, Cookie>()
 
+        @Synchronized
         override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
             for (cookie in cookies) {
                 val key = "${cookie.domain}|${cookie.path}|${cookie.name}"
@@ -23,7 +24,10 @@ object NetworkModule {
             }
         }
 
+        @Synchronized
         override fun loadForRequest(url: HttpUrl): List<Cookie> {
+            val now = System.currentTimeMillis()
+            cookieStore.entries.removeAll { it.value.expiresAt <= now }
             return cookieStore.values.filter { it.matches(url) }
         }
     }
@@ -38,7 +42,9 @@ object NetworkModule {
             chain.proceed(request)
         }
         .addInterceptor(HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.HEADERS // Log headers for cookie debugging, but not body for security
+            redactHeader("Cookie")
+            redactHeader("Set-Cookie")
+            level = HttpLoggingInterceptor.Level.NONE
         })
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)

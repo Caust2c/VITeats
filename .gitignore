@@ -17,6 +17,9 @@ CLAUDE.md
 # VITeats Specific
 *.har
 .artifacts/
+.artifact-build/
+.release-build/
 .kotlin/
 *.jks
 *.keystore
+~$*

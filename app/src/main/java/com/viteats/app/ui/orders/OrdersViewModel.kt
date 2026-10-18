@@ -2,7 +2,6 @@ package com.viteats.app.ui.orders
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.viteats.app.data.remote.MenuItem
 import com.viteats.app.data.remote.Order
 import com.viteats.app.data.repository.CartRepository
 import com.viteats.app.data.repository.MenuRepository
@@ -41,15 +40,27 @@ class OrdersViewModel(
     private val _reorderMessage = MutableSharedFlow<String>()
     val reorderMessage: SharedFlow<String> = _reorderMessage.asSharedFlow()
 
+    init {
+        viewModelScope.launch {
+            repository.observeOrders().collect { orders ->
+                if (orders.isNotEmpty()) _ordersState.value = OrdersState.Success(orders, "")
+            }
+        }
+        viewModelScope.launch { repository.ordersUpdated.collect { fetchOrders() } }
+    }
+
     fun fetchOrders() {
         viewModelScope.launch {
             _ordersState.value = OrdersState.Loading
             try {
-                val rawResponse = repository.getRawOrders()
-                val orders = repository.parseOrders(rawResponse)
-                _ordersState.value = OrdersState.Success(orders, rawResponse)
+                val cached = repository.cachedOrders()
+                if (cached.isNotEmpty()) _ordersState.value = OrdersState.Success(cached, "")
+                val orders = repository.getOrders()
+                _ordersState.value = OrdersState.Success(orders, "")
             } catch (e: Exception) {
-                _ordersState.value = OrdersState.Error(e.message ?: "Unknown error")
+                val cached = repository.cachedOrders()
+                _ordersState.value = if (cached.isNotEmpty()) OrdersState.Success(cached, "")
+                    else OrdersState.Error(e.message ?: "Unknown error")
             }
         }
     }
@@ -78,33 +89,23 @@ class OrdersViewModel(
         viewModelScope.launch {
             try {
                 val currentMenuItems = menuRepository.getMenuItems()
-                val matchingItem = currentMenuItems.find {
-                    it.meitdes.contains(order.sname, ignoreCase = true) ||
-                    it.dispname.contains(order.sname, ignoreCase = true) ||
-                    order.sname.contains(it.meitdes, ignoreCase = true)
+                val saved = repository.savedItems(order.OrderId)
+                val items = com.viteats.app.data.OrderingPolicy.reorder(saved, currentMenuItems)
+                // Validate the merged cart before changing anything.
+                val merged = cartRepository.cartItems.value.toMutableList()
+                items.forEach { line ->
+                    val index = merged.indexOfFirst { it.item.meitid == line.item.meitid }
+                    if (index >= 0) merged[index] = line.copy(quantity = merged[index].quantity + line.quantity)
+                    else merged.add(line)
                 }
-
-                val itemToAdd = matchingItem ?: MenuItem(
-                    meitid = order.OrderId.filter { it.isDigit() }.toIntOrNull() ?: kotlin.math.abs(order.OrderId.hashCode() % 10000) + 100,
-                    meitdes = if (order.sname.isNotBlank()) order.sname else "Mess Meal (Order #${order.OrderId})",
-                    retrt = if (order.NetAmount > 0) order.NetAmount else 50.0,
-                    odtdes = "Mess Counter",
-                    skuid = 2,
-                    dispname = if (order.sname.isNotBlank()) order.sname else "Mess Order",
-                    skudes = "Meals",
-                    StockQty = 20,
-                    icat = 1,
-                    StartTime = null,
-                    EndTime = null
-                )
-
-                cartRepository.addItem(itemToAdd, quantity = 1)
-                val itemName = itemToAdd.meitdes.take(24)
-                _reorderMessage.emit("Added \"$itemName\" to your cart!")
+                com.viteats.app.data.OrderingPolicy.reorder(merged, currentMenuItems)
+                cartRepository.addItems(items.map { it.item to it.quantity })
+                _reorderMessage.emit("Added ${items.sumOf { it.quantity }} items to your cart at current prices.")
                 onComplete?.invoke()
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
-                _reorderMessage.emit("Added order to cart!")
-                onComplete?.invoke()
+                _reorderMessage.emit(e.message ?: "Unable to reorder. Cart was not changed.")
             }
         }
     }

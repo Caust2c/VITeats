@@ -45,8 +45,9 @@ import com.viteats.app.ui.components.NeobrutalPill
 import com.viteats.app.ui.theme.*
 import com.viteats.app.util.MealPeriodHelper
 import com.viteats.app.util.MealType
-import java.time.LocalDate
-import java.time.YearMonth
+import com.viteats.app.data.BudgetSummary
+import com.viteats.app.data.indiaCalendar
+import kotlinx.coroutines.delay
 import java.util.Calendar
 
 enum class FinancialHealthStatus(
@@ -55,7 +56,9 @@ enum class FinancialHealthStatus(
 ) {
     ON_TRACK("On Track", Color(0xFFA8F0D4)),
     PACING_FAST("Pacing Fast", Color(0xFFFFD166)),
-    OVER_BUDGET("Over Budget", Color(0xFFFF6B6B))
+    OVER_BUDGET("Over Budget", Color(0xFFFF6B6B)),
+    SET_BUDGET("Set Budget", Color(0xFFFFD166)),
+    CHECK_DATA("Check Data", Color(0xFFFFD166))
 }
 
 @Composable
@@ -73,10 +76,17 @@ fun StudentScreen(
     val textMuted = if (isDark) DarkTextSecondary else MutedText
 
     var mealStatus by remember { mutableStateOf(MealPeriodHelper.getCurrentMealStatus()) }
+    var today by remember { mutableStateOf(indiaCalendar()) }
 
     LaunchedEffect(Unit) {
         mealStatus = MealPeriodHelper.getCurrentMealStatus()
         viewModel.fetchOrdersAndExpenses()
+        while (true) {
+            delay(60_000)
+            today = indiaCalendar()
+            mealStatus = MealPeriodHelper.getCurrentMealStatus()
+            viewModel.checkMonthlyReset()
+        }
     }
 
     Column(
@@ -200,36 +210,26 @@ fun StudentScreen(
                 val initialMonthlyAllocation by viewModel.initialMonthlyAllocation.collectAsState()
                 val currentSpending by viewModel.currentSpending.collectAsState()
                 val isMonthRolledOver by viewModel.isMonthRolledOver.collectAsState()
+                val expensesLoading by viewModel.expensesLoading.collectAsState()
+                val expensesError by viewModel.expensesError.collectAsState()
 
                 var isEditingBudget by remember { mutableStateOf(isMonthRolledOver || initialMonthlyAllocation <= 0.0) }
+                LaunchedEffect(isMonthRolledOver) {
+                    if (isMonthRolledOver) isEditingBudget = true
+                }
 
                 // --- Dynamic "Financial Health" Dashboard Card ---
-                val remainingBudget = balance.bal
-                val budgetProgress = if (initialMonthlyAllocation > 0) {
-                    (currentSpending / initialMonthlyAllocation).toFloat().coerceIn(0f, 1f)
-                } else 0f
-
-                val today = remember { LocalDate.now() }
-                val yearMonth = remember(today) { YearMonth.from(today) }
-                val daysInMonth = remember(yearMonth) { yearMonth.lengthOfMonth() }
-                val currentDay = remember(today) { today.dayOfMonth }
-                val daysLeftInMonth = remember(daysInMonth, currentDay) { (daysInMonth - currentDay + 1).coerceAtLeast(1) }
-                val safeDailySpend = remember(remainingBudget, daysLeftInMonth) {
-                    if (daysLeftInMonth > 0) (remainingBudget / daysLeftInMonth).coerceAtLeast(0.0) else 0.0
-                }
-                val daysPassed = remember(currentDay) { currentDay.coerceAtLeast(1) }
-                val currentDailyAverage = remember(currentSpending, daysPassed) {
-                    if (daysPassed > 0) (currentSpending / daysPassed).coerceAtLeast(0.0) else 0.0
-                }
-
-                val healthStatus = remember(safeDailySpend, currentDailyAverage, remainingBudget, initialMonthlyAllocation, currentSpending) {
-                    if (remainingBudget <= 0.0 || (initialMonthlyAllocation > 0 && currentSpending >= initialMonthlyAllocation) || currentDailyAverage > safeDailySpend * 1.20) {
-                        FinancialHealthStatus.OVER_BUDGET
-                    } else if (currentDailyAverage > safeDailySpend) {
-                        FinancialHealthStatus.PACING_FAST
-                    } else {
-                        FinancialHealthStatus.ON_TRACK
-                    }
+                val summary = BudgetSummary.calculate(initialMonthlyAllocation, currentSpending, balance.bal, today)
+                val remainingBudget = summary.remaining ?: summary.availableToSpend
+                val budgetProgress = summary.usedFraction
+                val daysLeftInMonth = summary.daysLeft
+                val safeDailySpend = summary.safeDailySpend
+                val healthStatus = when {
+                    expensesLoading || expensesError != null -> FinancialHealthStatus.CHECK_DATA
+                    initialMonthlyAllocation <= 0 -> FinancialHealthStatus.SET_BUDGET
+                    currentSpending >= initialMonthlyAllocation -> FinancialHealthStatus.OVER_BUDGET
+                    summary.projectedMonthlySpend > initialMonthlyAllocation -> FinancialHealthStatus.PACING_FAST
+                    else -> FinancialHealthStatus.ON_TRACK
                 }
 
                 val formattedSafeDailySpend = remember(safeDailySpend) {
@@ -257,11 +257,13 @@ fun StudentScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Row(
+                                modifier = Modifier.weight(1f).padding(end = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Text(
                                     text = "Financial Health",
+                                    modifier = Modifier.weight(1f),
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Black,
                                     color = textPrimary
@@ -318,8 +320,10 @@ fun StudentScreen(
                         // Inline Budget Setting & Editing Block
                         if (isEditingBudget) {
                             var budgetInputText by remember(initialMonthlyAllocation) {
-                                mutableStateOf(if (initialMonthlyAllocation > 0) initialMonthlyAllocation.toInt().toString() else "")
+                                mutableStateOf(if (initialMonthlyAllocation > 0) initialMonthlyAllocation.toString() else "")
                             }
+                            val enteredBudget = budgetInputText.toDoubleOrNull()
+                            val isValidBudget = enteredBudget != null && enteredBudget.isFinite() && enteredBudget > 0 && enteredBudget <= 999999999
 
                             Box(
                                 modifier = Modifier
@@ -344,12 +348,12 @@ fun StudentScreen(
                                     ) {
                                         OutlinedTextField(
                                             value = budgetInputText,
-                                            onValueChange = { budgetInputText = it.filter { ch -> ch.isDigit() } },
+                                            onValueChange = { if (it.matches(Regex("[0-9]{0,9}(\\.[0-9]{0,2})?"))) budgetInputText = it },
                                             label = { Text("Budget", fontWeight = FontWeight.Bold) },
                                             prefix = { Text("₹", fontWeight = FontWeight.Bold, color = textPrimary) },
                                             placeholder = { Text("8000") },
                                             singleLine = true,
-                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                             shape = RoundedCornerShape(10.dp),
                                             colors = OutlinedTextFieldDefaults.colors(
                                                 focusedTextColor = textPrimary,
@@ -364,12 +368,12 @@ fun StudentScreen(
 
                                         NeobrutalButton(
                                             onClick = {
-                                                val enteredBudget = budgetInputText.toDoubleOrNull()
-                                                if (enteredBudget != null && enteredBudget > 0) {
+                                                if (isValidBudget) {
                                                     viewModel.setInitialMonthlyAllocation(enteredBudget)
+                                                    isEditingBudget = false
                                                 }
-                                                isEditingBudget = false
                                             },
+                                            enabled = isValidBudget,
                                             backgroundColor = MintGreen,
                                             contentColor = NeobrutalBlack,
                                             borderColor = NeobrutalBlack,
@@ -406,7 +410,7 @@ fun StudentScreen(
                                 .background(
                                     when (healthStatus) {
                                         FinancialHealthStatus.ON_TRACK -> if (isDark) Color(0xFF16382A) else Color(0xFFEDFDF5)
-                                        FinancialHealthStatus.PACING_FAST -> if (isDark) Color(0xFF382C14) else Color(0xFFFFFBEB)
+                                        FinancialHealthStatus.PACING_FAST, FinancialHealthStatus.SET_BUDGET, FinancialHealthStatus.CHECK_DATA -> if (isDark) Color(0xFF382C14) else Color(0xFFFFFBEB)
                                         FinancialHealthStatus.OVER_BUDGET -> if (isDark) Color(0xFF381717) else Color(0xFFFEF2F2)
                                     }
                                 )
@@ -419,7 +423,7 @@ fun StudentScreen(
                                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
                                     Text(
-                                        text = "₹$formattedSafeDailySpend",
+                                        text = if (expensesLoading || expensesError != null) "—" else "₹$formattedSafeDailySpend",
                                         style = MaterialTheme.typography.headlineMedium,
                                         fontWeight = FontWeight.Black,
                                         color = textPrimary
@@ -430,14 +434,14 @@ fun StudentScreen(
                                         fontWeight = FontWeight.Black,
                                         color = when (healthStatus) {
                                             FinancialHealthStatus.ON_TRACK -> if (isDark) Color(0xFF86EFAC) else Color(0xFF16A34A)
-                                            FinancialHealthStatus.PACING_FAST -> if (isDark) Color(0xFFFCD34D) else Color(0xFFD97706)
+                                            FinancialHealthStatus.PACING_FAST, FinancialHealthStatus.SET_BUDGET, FinancialHealthStatus.CHECK_DATA -> if (isDark) Color(0xFFFCD34D) else Color(0xFFD97706)
                                             FinancialHealthStatus.OVER_BUDGET -> if (isDark) Color(0xFFFCA5A5) else Color(0xFFDC2626)
                                         }
                                     )
                                 }
 
                                 Text(
-                                    text = "₹$formattedRemainingBudget total remaining",
+                                    text = if (summary.remaining != null) "₹$formattedRemainingBudget budget remaining" else "₹$formattedRemainingBudget wallet remaining",
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = textMuted
@@ -470,7 +474,7 @@ fun StudentScreen(
                                         .background(
                                             when (healthStatus) {
                                                 FinancialHealthStatus.ON_TRACK -> Color(0xFF22C55E)
-                                                FinancialHealthStatus.PACING_FAST -> Color(0xFFF59E0B)
+                                                FinancialHealthStatus.PACING_FAST, FinancialHealthStatus.SET_BUDGET, FinancialHealthStatus.CHECK_DATA -> Color(0xFFF59E0B)
                                                 FinancialHealthStatus.OVER_BUDGET -> Color(0xFFEF4444)
                                             }
                                         )
@@ -486,6 +490,7 @@ fun StudentScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
+                                modifier = Modifier.weight(1f).padding(end = 8.dp),
                                 text = if (initialMonthlyAllocation > 0) {
                                     "₹${currentSpending.toInt()} Spent of ₹${initialMonthlyAllocation.toInt()} Budget"
                                 } else {
@@ -497,11 +502,23 @@ fun StudentScreen(
                             )
 
                             Text(
-                                text = "${(budgetProgress * 100).toInt()}% Used",
+                                text = if (initialMonthlyAllocation > 0) "${(currentSpending / initialMonthlyAllocation * 100).toInt()}% Used" else "Not set",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Black,
                                 color = textPrimary
                             )
+                        }
+                        Text(
+                            text = "This month's successful orders. Daily allowance uses the smaller of your wallet and remaining budget; today is included.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = textMuted
+                        )
+                        if (expensesLoading) {
+                            Text("Refreshing monthly expenses…", color = textMuted)
+                        }
+                        expensesError?.let { message ->
+                            Text(message, color = textMuted)
+                            TextButton(onClick = { viewModel.fetchOrdersAndExpenses() }) { Text("Retry expenses") }
                         }
                     }
                 }
@@ -535,7 +552,7 @@ fun StudentScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Expense Breakdown",
+                                text = "This Month's Expenses",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Black,
                                 color = textPrimary

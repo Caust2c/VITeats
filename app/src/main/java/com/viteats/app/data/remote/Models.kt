@@ -59,10 +59,13 @@ data class MenuItem(
     val StockQty: Int,
     val icat: Int,
     val StartTime: String?,
-    val EndTime: String?,
-    // Helper to get image URL
-    val imageUrl: String = "https://vit-proodle.expertsoftsys.com/images/$meitid.jpg"
-)
+    val EndTime: String?
+) {
+    // Gson may allocate API models without invoking the Kotlin constructor.
+    // Derive this on access so it always uses the deserialized product ID.
+    val imageUrl: String
+        get() = "https://vit-proodle.expertsoftsys.com/images/$meitid.jpg"
+}
 
 // --- Orders ---
 data class Order(
@@ -75,7 +78,8 @@ data class Order(
     val sname: String,
     val qrstat: Int,
     val RegNo: String,
-    val studname: String
+    val studname: String,
+    val purchasedItems: List<com.viteats.app.data.model.CartItem>? = null
 )
 //String response stored for QR and then base64 decode to image (tested and works)
 typealias OrderQRResponse = String

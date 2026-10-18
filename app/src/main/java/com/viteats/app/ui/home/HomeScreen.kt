@@ -202,7 +202,7 @@ fun HomeScreen(
             when (selectedTab) {
                 0 -> StudentScreen(viewModel = studentViewModel, onNavigateToTab = { selectedTab = it })
                 1 -> MenuScreen(viewModel = menuViewModel, onNavigateToCart = onNavigateToCart)
-                2 -> OrdersScreen(viewModel = ordersViewModel, onOrderClick = onOrderClick)
+                2 -> OrdersScreen(viewModel = ordersViewModel, onOrderClick = onOrderClick, onCartReady = onNavigateToCart)
                 3 -> SettingsScreen(viewModel = settingsViewModel, onLogout = onLogout)
             }
         }

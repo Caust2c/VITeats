@@ -32,11 +32,9 @@ import com.viteats.app.ui.components.NeobrutalPill
 import com.viteats.app.ui.theme.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
-import java.text.SimpleDateFormat
-import java.util.*
 
 @Composable
-fun OrdersScreen(viewModel: OrdersViewModel, onOrderClick: (String) -> Unit) {
+fun OrdersScreen(viewModel: OrdersViewModel, onOrderClick: (String) -> Unit, onCartReady: () -> Unit = {}) {
     val ordersState by viewModel.ordersState.collectAsState()
     var reorderToastMessage by remember { mutableStateOf<String?>(null) }
     val isDark = LocalDarkTheme.current
@@ -145,7 +143,7 @@ fun OrdersScreen(viewModel: OrdersViewModel, onOrderClick: (String) -> Unit) {
                                 OrderListItem(
                                     order = order,
                                     onViewQR = { onOrderClick(order.OrderId) },
-                                    onReorder = { viewModel.reorderPastOrder(order) }
+                                    onReorder = { viewModel.reorderPastOrder(order, onCartReady) }
                                 )
                             }
                         }
@@ -192,7 +190,7 @@ fun OrdersScreen(viewModel: OrdersViewModel, onOrderClick: (String) -> Unit) {
             exit = slideOutVertically(targetOffsetY = { it })
         ) {
             NeobrutalCard(
-                backgroundColor = MintGreen,
+                backgroundColor = SoftCyan,
                 borderColor = NeobrutalBlack,
                 borderWidth = 2.dp,
                 shadowOffset = 4.dp,
@@ -203,7 +201,7 @@ fun OrdersScreen(viewModel: OrdersViewModel, onOrderClick: (String) -> Unit) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = Icons.Default.CheckCircle,
+                        imageVector = Icons.Default.Info,
                         contentDescription = null,
                         tint = NeobrutalBlack,
                         modifier = Modifier.size(20.dp)
@@ -222,255 +220,58 @@ fun OrdersScreen(viewModel: OrdersViewModel, onOrderClick: (String) -> Unit) {
 }
 
 @Composable
-fun OrderListItem(
-    order: Order,
-    onViewQR: () -> Unit,
-    onReorder: () -> Unit
-) {
-    val qrAvailable = isQrAvailable(order)
-    var isExpanded by remember { mutableStateOf(false) }
+fun OrderListItem(order: Order, onViewQR: () -> Unit, onReorder: () -> Unit) {
     val isDark = LocalDarkTheme.current
-
-    val cardBg = if (isDark) DarkCardBg else NeobrutalWhite
-    val textPrimary = if (isDark) DarkTextPrimary else NeobrutalBlack
-    val textMuted = if (isDark) DarkTextSecondary else MutedText
-    val accordionBg = if (isDark) Color(0xFF374151) else LavenderCard
-
-    // Parse items list and formatted summary
-    val parsedItems = remember(order.sname) {
-        if (order.sname.isBlank()) listOf("Mess Meal")
-        else order.sname.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-    }
-
-    val summaryText = remember(parsedItems) {
-        parsedItems.joinToString(", ") { "$it x1" }
-    }
-
+    val textColor = if (isDark) DarkTextPrimary else NeobrutalBlack
+    val savedItems = order.purchasedItems.orEmpty()
     NeobrutalCard(
-        backgroundColor = cardBg,
-        borderColor = NeobrutalBlack,
-        borderWidth = 2.dp,
-        shadowOffset = 4.dp,
-        cornerRadius = 16.dp,
-        modifier = Modifier.animateContentSize()
+        backgroundColor = if (isDark) DarkCardBg else NeobrutalWhite,
+        modifier = Modifier.fillMaxWidth().height(292.dp).clickable(onClick = onViewQR),
+        cornerRadius = 16.dp
     ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Header: Date & Status Badge
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = order.OrderDate,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = textMuted,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        text = "Order #${order.OrderId}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = textMuted,
-                        fontWeight = FontWeight.Medium
-                    )
+        Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Column(Modifier.weight(1f)) {
+                    Text("Order #${order.OrderId}", color = textColor, fontWeight = FontWeight.Black,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(order.OrderDate, color = textColor, style = MaterialTheme.typography.bodySmall)
                 }
-
-                NeobrutalStatusBadge(status = order.Status)
+                NeobrutalStatusBadge(order.Status)
             }
-
-            // Order Content Summary & Price
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = if (order.sname.isNotBlank()) order.sname else "Mess Order",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Black,
-                        color = textPrimary
-                    )
-
-                    Spacer(modifier = Modifier.height(2.dp))
-
-                    // Truncated Order Summary string
-                    Text(
-                        text = summaryText,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = textMuted,
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Text(
-                    text = "₹${order.NetAmount.toInt()}",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Black,
-                    color = textPrimary
-                )
-            }
-
-            // "View Items" Accordion Toggle Button
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(if (isExpanded) SoftCyan else LavenderCard)
-                        .border(BorderStroke(1.5.dp, NeobrutalBlack), RoundedCornerShape(8.dp))
-                        .clickable { isExpanded = !isExpanded }
-                        .padding(horizontal = 10.dp, vertical = 5.dp)
-                ) {
-                    Text(
-                        text = if (isExpanded) "Hide Items" else "View Items",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Black,
-                        color = NeobrutalBlack
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Icon(
-                        imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = if (isExpanded) "Hide items" else "View items",
-                        tint = NeobrutalBlack,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
-
-            // Expanded Accordion List of Purchased Items
-            AnimatedVisibility(visible = isExpanded) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(LavenderCard)
-                        .border(BorderStroke(1.5.dp, NeobrutalBlack), RoundedCornerShape(10.dp))
-                        .padding(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = "PURCHASED ITEMS",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Black,
-                        color = MutedText,
-                        letterSpacing = 0.5.sp
-                    )
-                    HorizontalDivider(color = NeobrutalBlack.copy(alpha = 0.15f), thickness = 1.dp)
-
-                    parsedItems.forEach { item ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(6.dp)
-                                        .background(NeobrutalBlack, shape = RoundedCornerShape(50))
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = item,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = NeobrutalBlack
-                                )
-                            }
-                            Text(
-                                text = "x1",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Black,
-                                color = NeobrutalBlack
-                            )
+            Text("₹${"%.2f".format(order.NetAmount)}", color = textColor,
+                style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
+            LazyColumn(Modifier.fillMaxWidth().weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (savedItems.isNotEmpty()) {
+                    items(savedItems) { line ->
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("${line.item.meitdes} ×${line.quantity}", modifier = Modifier.weight(1f),
+                                color = textColor, style = MaterialTheme.typography.bodySmall)
+                            Text("₹${"%.2f".format(line.lineTotal)}", color = textColor,
+                                style = MaterialTheme.typography.bodySmall)
                         }
                     }
+                } else {
+                    item {
+                        Text(order.sname.ifBlank { "Item details unavailable for this older order." },
+                            color = textColor, style = MaterialTheme.typography.bodySmall)
+                        Text("Exact quantities were not provided by Proodle.", color = textColor,
+                            style = MaterialTheme.typography.labelSmall)
+                    }
                 }
             }
-
-            // Action Buttons: 1-Click Reorder & View QR (if available)
-            val mealStatus = remember { com.viteats.app.util.MealPeriodHelper.getCurrentMealStatus() }
-            val isMessClosed = mealStatus.activeMeal == null
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Compact Auto-width Yellow "1-Click Reorder" / "Currently Closed" button
-                NeobrutalButton(
-                    onClick = { if (!isMessClosed) onReorder() },
-                    enabled = !isMessClosed,
-                    backgroundColor = if (isMessClosed) Color.LightGray else PastelYellow,
-                    contentColor = if (isMessClosed) Color.DarkGray else NeobrutalBlack,
-                    borderColor = NeobrutalBlack,
-                    borderWidth = 2.dp,
-                    shadowOffset = if (isMessClosed) 0.dp else 2.dp,
-                    cornerRadius = 8.dp,
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
-                ) {
-                    Icon(
-                        imageVector = if (isMessClosed) Icons.Default.Schedule else Icons.Default.Replay,
-                        contentDescription = null,
-                        modifier = Modifier.size(15.dp),
-                        tint = if (isMessClosed) Color.DarkGray else NeobrutalBlack
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = if (isMessClosed) "Currently Closed" else "1-Click Reorder",
-                        fontWeight = FontWeight.Black,
-                        style = MaterialTheme.typography.labelMedium
-                    )
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                NeobrutalButton(onClick = onReorder, enabled = savedItems.isNotEmpty(),
+                    backgroundColor = PastelYellow, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)) {
+                    Text("Reorder", fontWeight = FontWeight.Bold)
                 }
-
-                // QR Code Button (if active on the same day)
-                if (qrAvailable) {
-                    NeobrutalButton(
-                        onClick = onViewQR,
-                        backgroundColor = MintGreen,
-                        contentColor = NeobrutalBlack,
-                        borderColor = NeobrutalBlack,
-                        borderWidth = 2.dp,
-                        shadowOffset = 2.dp,
-                        cornerRadius = 8.dp,
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.QrCode2,
-                            contentDescription = "View QR",
-                            modifier = Modifier.size(15.dp),
-                            tint = NeobrutalBlack
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "QR",
-                            fontWeight = FontWeight.Black,
-                            style = MaterialTheme.typography.labelMedium
-                        )
-                    }
+                NeobrutalButton(onClick = onViewQR, backgroundColor = MintGreen,
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)) {
+                    Text("View QR", fontWeight = FontWeight.Bold)
                 }
             }
         }
     }
 }
-
 @Composable
 fun NeobrutalStatusBadge(status: String) {
     val isDelivered = status.equals("Delivered", ignoreCase = true) || status.equals("Success", ignoreCase = true)
@@ -487,24 +288,4 @@ fun NeobrutalStatusBadge(status: String) {
         textColor = NeobrutalBlack,
         isSelected = false
     )
-}
-
-fun isQrAvailable(order: Order): Boolean {
-    if (order.Status == "Delivered" || order.Status == "Success") return false
-    if (order.Status.lowercase().contains("fail") || order.CancelStatus == "Cancel") return false
-
-    return try {
-        val sdf = SimpleDateFormat("dd/MMM/yyyy", Locale.US)
-        val orderDate = sdf.parse(order.OrderDate) ?: return false
-        val today = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }.time
-
-        !orderDate.before(today)
-    } catch (e: Exception) {
-        false
-    }
 }

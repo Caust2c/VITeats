@@ -93,10 +93,13 @@ fun OrderDetailsScreen(
                 is OrderQRState.Success -> {
                     val bitmap = remember(state.qrData) {
                         try {
-                            val pureBase64 = if (state.qrData.contains(",")) {
-                                state.qrData.split(",")[1]
+                            val qrText = state.qrData.trim().let {
+                                if (it.startsWith("\"")) com.google.gson.Gson().fromJson(it, String::class.java) else it
+                            }
+                            val pureBase64 = if (qrText.contains(",")) {
+                                qrText.substringAfter(",")
                             } else {
-                                state.qrData
+                                qrText
                             }
                             val decodedString = Base64.decode(pureBase64, Base64.DEFAULT)
                             BitmapFactory.decodeByteArray(decodedString, 0, decodedString.size)
@@ -151,7 +154,7 @@ fun OrderDetailsScreen(
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = "Valid for collection today only.",
+                                    text = "Saved QR. Collection validity is determined by FoodPark.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MutedText
                                 )
