@@ -20,6 +20,8 @@ class VITeatsApplication : Application(), ImageLoaderFactory {
     lateinit var favouritesManager: com.viteats.app.data.FavouritesManager
     lateinit var themeManager: com.viteats.app.data.ThemeManager
     lateinit var budgetManager: com.viteats.app.data.BudgetManager
+    lateinit var orderDatabase: com.viteats.app.data.local.OrderDatabase
+    lateinit var autoOrderSettings: com.viteats.app.data.AutoOrderSettings
 
     override fun onCreate() {
         super.onCreate()
@@ -28,7 +30,10 @@ class VITeatsApplication : Application(), ImageLoaderFactory {
         authRepository = AuthRepository(api, sessionManager)
         studentRepository = StudentRepository(api, sessionManager)
         menuRepository = MenuRepository(api, sessionManager)
-        orderRepository = OrderRepository(api, sessionManager)
+        orderDatabase = androidx.room.Room.databaseBuilder(this,
+            com.viteats.app.data.local.OrderDatabase::class.java, "order_history.db").build()
+        autoOrderSettings = com.viteats.app.data.AutoOrderSettings(this, sessionManager)
+        orderRepository = OrderRepository(api, sessionManager, orderDatabase.orders(), menuRepository, autoOrderSettings)
         cartRepository = com.viteats.app.data.repository.CartRepository()
         favouritesManager = com.viteats.app.data.FavouritesManager(this)
         themeManager = com.viteats.app.data.ThemeManager(this)

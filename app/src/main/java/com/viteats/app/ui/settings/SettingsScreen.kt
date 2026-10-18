@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.viteats.app.ui.components.NeobrutalButton
+import com.viteats.app.BuildConfig
 import com.viteats.app.ui.components.NeobrutalCard
 import com.viteats.app.ui.components.NeobrutalPill
 import com.viteats.app.ui.theme.*
@@ -64,6 +65,8 @@ fun SettingsScreen(
                 color = textMuted
             )
         }
+
+        OrderingSettingsCard()
 
         // --- Appearance & Dark Mode Card ---
         NeobrutalCard(
@@ -168,7 +171,7 @@ fun SettingsScreen(
                         color = textPrimary
                     )
                     Text(
-                        text = "v1.0.0",
+                        text = "v${BuildConfig.VERSION_NAME}",
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Black,
                         color = textMuted

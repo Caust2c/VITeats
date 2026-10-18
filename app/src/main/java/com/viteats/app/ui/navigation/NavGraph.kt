@@ -19,7 +19,7 @@ sealed class Screen(val route: String) {
     object Home : Screen("home")
     object Cart : Screen("cart")
     object OrderDetails : Screen("order_details/{orderId}") {
-        fun createRoute(orderId: String) = "order_details/$orderId"
+        fun createRoute(orderId: String) = "order_details/${android.net.Uri.encode(orderId)}"
     }
 }
 

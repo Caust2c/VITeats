@@ -10,8 +10,20 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.lang.reflect.Proxy
 import android.content.SharedPreferences
+import java.util.Calendar
+import java.util.TimeZone
 
 class StudentViewModelTest {
+    private fun fixedCalendar(): Calendar = Calendar.getInstance(TimeZone.getTimeZone("Asia/Kolkata")).apply {
+        clear()
+        set(2026, Calendar.SEPTEMBER, 20, 12, 0)
+    }
+
+    private fun createViewModel(budgetManager: BudgetManager? = null) =
+        StudentViewModel(StudentRepository(), budgetManager, calendarProvider = ::fixedCalendar)
+
+    private fun order(date: String = "13/SEP/2026", status: String = "Success", amount: Double = 100.0, id: String = "1") =
+        com.viteats.app.data.remote.Order(date, "12:30 pm", amount, id, status, "Cancel", "LUNCH", 1, "TEST", "Test")
 
     private fun createFakeSharedPreferences(initialValues: Map<String, Any?> = emptyMap()): SharedPreferences {
         val map = HashMap<String, Any?>(initialValues)
@@ -30,6 +42,9 @@ class StudentViewModelTest {
                     map[args[0] as String] = args[1] as Int
                     editorProxy
                 }
+                "putString" -> { map[args[0] as String] = args[1]; editorProxy }
+                "remove" -> { map.remove(args[0] as String); editorProxy }
+                "clear" -> { map.clear(); editorProxy }
                 "apply", "commit" -> null
                 else -> editorProxy
             }
@@ -51,6 +66,7 @@ class StudentViewModelTest {
                     (map[key] as? Int) ?: defValue
                 }
                 "edit" -> editorProxy
+                "getString" -> map[args[0] as String] as? String ?: args[1]
                 else -> null
             }
         } as SharedPreferences
@@ -58,7 +74,7 @@ class StudentViewModelTest {
 
     @Test
     fun testSpendingInitializedAtZero() {
-        val viewModel = StudentViewModel(StudentRepository())
+        val viewModel = createViewModel()
         assertEquals(0.0, viewModel.currentSpending.value, 0.001)
         assertEquals(0.0, viewModel.initialMonthlyAllocation.value, 0.001)
     }
@@ -67,7 +83,7 @@ class StudentViewModelTest {
     fun testSetMonthlyAllocation() {
         val prefs = createFakeSharedPreferences()
         val budgetManager = BudgetManager(prefs)
-        val viewModel = StudentViewModel(StudentRepository(), budgetManager)
+        val viewModel = createViewModel(budgetManager)
 
         viewModel.setInitialMonthlyAllocation(9000.0)
         assertEquals(9000.0, viewModel.initialMonthlyAllocation.value, 0.001)
@@ -79,27 +95,26 @@ class StudentViewModelTest {
     }
 
     @Test
-    fun testDynamicSpendingFormula() {
+    fun testBudgetEditsDoNotChangeActualOrderSpending() {
         val prefs = createFakeSharedPreferences()
         val budgetManager = BudgetManager(prefs)
-        val viewModel = StudentViewModel(StudentRepository(), budgetManager)
+        val viewModel = createViewModel(budgetManager)
 
         // Set initial monthly allocation to ₹9000
         viewModel.setInitialMonthlyAllocation(9000.0)
 
-        // Current wallet balance is ₹7750
-        // formula: currentSpending = initialMonthlyAllocation - currentWalletBalance = 9000 - 7750 = 1250
-        val walletBalance = 7750.0
-        val expectedSpending = (viewModel.initialMonthlyAllocation.value - walletBalance).coerceAtLeast(0.0)
-        viewModel.updateCurrentSpending(expectedSpending)
-
+        viewModel.processOrdersForExpenses(listOf(order(amount = 1250.0)))
+        viewModel.setInitialMonthlyAllocation(8000.50)
+        viewModel.recalculateSpending()
         assertEquals(1250.0, viewModel.currentSpending.value, 0.001)
+        assertEquals(8000.50, budgetManager.getInitialMonthlyAllocation(), 0.001)
     }
 
     @Test
     fun testMonthlyRolloverReset() {
         // Saved month was previous month e.g. 202608 (August)
-        val pastMonth = 202608
+        val current = BudgetManager.getCurrentYearMonth()
+        val pastMonth = if (current % 100 == 1) (current / 100 - 1) * 100 + 12 else current - 1
         val prefs = createFakeSharedPreferences(
             mapOf(
                 "key_saved_year_month" to pastMonth,
@@ -107,7 +122,7 @@ class StudentViewModelTest {
             )
         )
         val budgetManager = BudgetManager(prefs)
-        val viewModel = StudentViewModel(StudentRepository(), budgetManager)
+        val viewModel = createViewModel(budgetManager)
 
         // Since current month is 202609, rollover occurred!
         assertTrue(viewModel.isMonthRolledOver.value)
@@ -117,7 +132,7 @@ class StudentViewModelTest {
 
     @Test
     fun testCategoryAggregationFromOrders() {
-        val viewModel = StudentViewModel(StudentRepository())
+        val viewModel = createViewModel()
 
         val testOrders = listOf(
             com.viteats.app.data.remote.Order(
@@ -204,7 +219,7 @@ class StudentViewModelTest {
 
     @Test
     fun testOrderClassificationByTimeFallback() {
-        val viewModel = StudentViewModel(StudentRepository())
+        val viewModel = createViewModel()
 
         val orderBreakfast = com.viteats.app.data.remote.Order(
             OrderDate = "13/SEP/2026",
@@ -261,5 +276,43 @@ class StudentViewModelTest {
             studname = "Test Student"
         )
         assertEquals("Dinner", viewModel.classifyOrderCategory(orderDinner))
+    }
+
+    @Test
+    fun emptyMonthNeverFallsBackToOlderOrders() {
+        val vm = createViewModel()
+        vm.processOrdersForExpenses(listOf(order(date = "13/AUG/2026")))
+        assertEquals(0.0, vm.currentSpending.value, 0.001)
+        assertEquals(0.0, vm.categorySpending.value.totalSpent, 0.001)
+    }
+
+    @Test
+    fun unsuccessfulAndDuplicateOrdersDoNotInflateSpending() {
+        val vm = createViewModel()
+        val paid = order(amount = 120.50)
+        vm.processOrdersForExpenses(listOf(paid, paid, order(status = "Pending", id = "2"),
+            order(status = "Failed", id = "3"), order(status = "Cancelled", id = "4")))
+        assertEquals(120.50, vm.currentSpending.value, 0.001)
+        vm.processOrdersForExpenses(emptyList())
+        assertEquals(0.0, vm.currentSpending.value, 0.001)
+    }
+
+    @Test
+    fun datesAreStrictAndUseTheFullMonthAndYear() {
+        val vm = createViewModel()
+        assertTrue(vm.isOrderInCurrentMonth("2026-09-13"))
+        assertTrue(vm.isOrderInCurrentMonth("13-SEP-2026"))
+        listOf("", "31/SEP/2026", "13/SEP/2026 garbage", "13/SEP/2025", "13/OCT/2026", "30/SEP/2026").forEach {
+            assertFalse(it, vm.isOrderInCurrentMonth(it))
+        }
+    }
+
+    @Test
+    fun nonFiniteLimitsAreRejected() {
+        val vm = createViewModel()
+        vm.setInitialMonthlyAllocation(1000.0)
+        vm.setInitialMonthlyAllocation(Double.POSITIVE_INFINITY)
+        vm.setInitialMonthlyAllocation(Double.NaN)
+        assertEquals(1000.0, vm.initialMonthlyAllocation.value, 0.001)
     }
 }

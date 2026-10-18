@@ -991,3 +991,27 @@ Anything that still needs verification.
 - **Unknown** — meaning has not been established.
 
 Do not treat `Observed`, `Inferred`, or `Unknown` fields as confirmed API contracts.
+
+---
+
+# 21. API Calls — Quick Summary
+
+All paths below are relative to `https://vit-proodle.expertsoftsys.com/api/`.
+This summarizes the current Android integration; response semantics remain subject to the confidence notes above.
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| POST | `GetOTPChecking` | Validate the student's login PIN/OTP and retrieve login identifiers. |
+| GET | `getstudWBalinfo?rno=<REGISTRATION_NUMBER>` | Retrieve student profile details and wallet balance. |
+| POST | `getmenugroup` | Retrieve menu groups; declared in the app but currently unused. |
+| POST | `Getcatlistnew` | Retrieve categories for the selected date, meal session and outlet. |
+| POST | `GetOptionMenuItems` | Retrieve menu items, prices and stock for the current meal session. |
+| POST | `GetOrderList` | Retrieve the student's order history and statuses. |
+| POST | `GetOrderIdDetails` | Generate an order number before checkout. |
+| POST | `GetOutletListInsert` | Submit the order's items, quantities, total and outlet information. |
+| POST | `OnlineWPayment` | Request wallet payment using the order number, amount and PIN/OTP. |
+| GET | `orderQR?ordno=<ORDER_NUMBER>` | Retrieve the order's QR response for display and local storage. |
+
+**Checkout sequence:** refresh menu and validate stock/prices → `GetOrderIdDetails` → `GetOutletListInsert` → `OnlineWPayment` → `orderQR`.
+
+Auto-order and reorder reuse these endpoints. Scheduling, budget checks, saved item snapshots and cached QR codes are handled locally by the app.

@@ -50,7 +50,9 @@ class MenuRepository(
     }
 
     private fun getFormattedDate(calendar: Calendar): String {
-        return SimpleDateFormat("dd-MMM-yyyy", Locale.US).format(calendar.time)
+        return SimpleDateFormat("dd-MMM-yyyy", Locale.US).apply {
+            timeZone = calendar.timeZone
+        }.format(calendar.time)
     }
 
     private fun getMenuParams(oid: String = "2"): Map<String, String>? {

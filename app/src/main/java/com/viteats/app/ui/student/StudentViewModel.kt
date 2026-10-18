@@ -3,6 +3,7 @@ package com.viteats.app.ui.student
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.viteats.app.data.BudgetManager
+import com.viteats.app.data.indiaCalendar
 import com.viteats.app.data.remote.BalanceResponse
 import com.viteats.app.data.remote.Order
 import com.viteats.app.data.repository.OrderRepository
@@ -12,7 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.time.LocalDate
+import java.text.ParsePosition
 import java.util.Calendar
 import java.util.Locale
 
@@ -45,7 +46,8 @@ data class CategorySpending(
 class StudentViewModel(
     private val repository: StudentRepository,
     private val budgetManager: BudgetManager? = null,
-    private val orderRepository: OrderRepository? = null
+    private val orderRepository: OrderRepository? = null,
+    private val calendarProvider: () -> Calendar = ::indiaCalendar
 ) : ViewModel() {
     private val _balanceState = MutableStateFlow<BalanceState>(BalanceState.Loading)
     val balanceState: StateFlow<BalanceState> = _balanceState
@@ -70,24 +72,29 @@ class StudentViewModel(
     private val _completedOrders = MutableStateFlow<List<Order>>(emptyList())
     val completedOrders: StateFlow<List<Order>> = _completedOrders.asStateFlow()
 
+    private val _expensesLoading = MutableStateFlow(true)
+    val expensesLoading: StateFlow<Boolean> = _expensesLoading.asStateFlow()
+    private val _expensesError = MutableStateFlow<String?>(null)
+    val expensesError: StateFlow<String?> = _expensesError.asStateFlow()
+
     init {
         checkMonthlyReset()
     }
 
     fun checkMonthlyReset() {
-        val didReset = budgetManager?.wasRolledOver == true || (budgetManager?.checkAndResetMonthlyRollover() ?: false)
+        val resetNow = budgetManager?.checkAndResetMonthlyRollover() ?: false
+        val didReset = resetNow || budgetManager?.wasRolledOver == true
         if (didReset) {
             _initialMonthlyAllocation.value = 0.0
-            _currentSpending.value = 0.0
             _isMonthRolledOver.value = true
         } else {
             _initialMonthlyAllocation.value = budgetManager?.getInitialMonthlyAllocation() ?: _initialMonthlyAllocation.value
-            recalculateSpending()
         }
+        processOrdersForExpenses(_completedOrders.value)
     }
 
     fun setInitialMonthlyAllocation(allocation: Double) {
-        if (allocation >= 0) {
+        if (allocation.isFinite() && allocation >= 0) {
             _initialMonthlyAllocation.value = allocation
             budgetManager?.setInitialMonthlyAllocation(allocation)
             _isMonthRolledOver.value = false
@@ -100,20 +107,13 @@ class StudentViewModel(
     }
 
     fun updateCurrentSpending(spending: Double) {
-        if (spending >= 0) {
+        if (spending.isFinite() && spending >= 0) {
             _currentSpending.value = spending
         }
     }
 
     fun recalculateSpending() {
-        val currentBal = (_balanceState.value as? BalanceState.Success)?.balance?.bal ?: return
-        val allocation = _initialMonthlyAllocation.value
-        if (allocation > 0) {
-            val spent = (allocation - currentBal).coerceAtLeast(0.0)
-            _currentSpending.value = spent
-        } else {
-            _currentSpending.value = 0.0
-        }
+        _currentSpending.value = _categorySpending.value.totalSpent
     }
 
     fun fetchBalance() {
@@ -135,8 +135,10 @@ class StudentViewModel(
     }
 
     private var isObservingOrders = false
+    private var expensesJob: kotlinx.coroutines.Job? = null
 
     fun fetchOrdersAndExpenses() {
+        checkMonthlyReset()
         val repo = orderRepository ?: return
         if (!isObservingOrders) {
             isObservingOrders = true
@@ -147,30 +149,39 @@ class StudentViewModel(
                 }
             }
         }
-        viewModelScope.launch {
+        expensesJob?.cancel()
+        expensesJob = viewModelScope.launch {
+            _expensesLoading.value = true
+            _expensesError.value = null
             try {
                 val orders = repo.getOrders()
                 processOrdersForExpenses(orders)
-            } catch (_: Exception) {}
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _expensesError.value = "Couldn't refresh monthly expenses. Retry to update your budget."
+            } finally {
+                _expensesLoading.value = false
+            }
         }
     }
 
     fun processOrdersForExpenses(orders: List<Order>) {
         val validOrders = orders.filter { order ->
-            !order.Status.equals("Cancelled", ignoreCase = true) &&
-            !order.Status.equals("Failed", ignoreCase = true)
-        }
+            (order.Status.trim().equals("Success", ignoreCase = true) ||
+                order.Status.trim().equals("Delivered", ignoreCase = true)) &&
+                order.NetAmount.isFinite() && order.NetAmount >= 0
+        }.distinctBy { it.OrderId }
         _completedOrders.value = validOrders
 
         val currentMonthOrders = validOrders.filter { isOrderInCurrentMonth(it.OrderDate) }
-        val ordersToAggregate = if (currentMonthOrders.isNotEmpty()) currentMonthOrders else validOrders
 
         var lunchSum = 0.0
         var dinnerSum = 0.0
         var snacksSum = 0.0
         var breakfastSum = 0.0
 
-        for (order in ordersToAggregate) {
+        for (order in currentMonthOrders) {
             val cat = classifyOrderCategory(order)
             val amt = if (order.NetAmount > 0) order.NetAmount else 0.0
             when (cat) {
@@ -190,10 +201,7 @@ class StudentViewModel(
             totalSpent = total
         )
 
-        // If allocation is not yet set and current spending is 0, update current spending with order total
-        if (_initialMonthlyAllocation.value <= 0.0 && total > 0) {
-            _currentSpending.value = total
-        }
+        recalculateSpending()
     }
 
     fun classifyOrderCategory(order: Order): String {
@@ -237,6 +245,8 @@ class StudentViewModel(
         var hour = parts[0].toIntOrNull() ?: return null
         val minute = if (parts.size > 1) parts[1].toIntOrNull() ?: 0 else 0
 
+        if (minute !in 0..59 || hour !in 0..23 || ((isAm || isPm) && hour !in 1..12)) return null
+
         if (isPm && hour < 12) hour += 12
         if (isAm && hour == 12) hour = 0
 
@@ -251,31 +261,26 @@ class StudentViewModel(
     }
 
     fun isOrderInCurrentMonth(orderDateStr: String): Boolean {
-        if (orderDateStr.isBlank()) return true
-        val clean = orderDateStr.trim().uppercase(Locale.ROOT)
-        val now = LocalDate.now()
-        val currentYear = now.year.toString()
-        val monthNum = String.format(Locale.US, "%02d", now.monthValue)
-        val monthShort = now.month.name.take(3) // "SEP", "AUG", etc.
-
-        val matchesYear = clean.contains(currentYear)
-        val matchesMonth = clean.contains(monthShort) || clean.contains("/$monthNum/") || clean.contains("-$monthNum-") || clean.contains("/$monthNum")
-
-        if (matchesYear && matchesMonth) return true
-
+        if (orderDateStr.isBlank()) return false
+        val clean = orderDateStr.trim()
+        val now = calendarProvider()
         val formats = listOf(
             "dd/MMM/yyyy", "dd-MMM-yyyy", "dd/MM/yyyy", "dd-MM-yyyy", "yyyy-MM-dd"
         )
         for (fmt in formats) {
             try {
-                val sdf = SimpleDateFormat(fmt, Locale.US)
-                val date = sdf.parse(orderDateStr)
-                if (date != null) {
-                    val cal = Calendar.getInstance()
+                val sdf = SimpleDateFormat(fmt, Locale.US).apply {
+                    isLenient = false
+                    timeZone = now.timeZone
+                }
+                val position = ParsePosition(0)
+                val date = sdf.parse(clean, position)
+                if (date != null && position.index == clean.length) {
+                    val cal = calendarProvider()
                     cal.time = date
                     val orderYear = cal.get(Calendar.YEAR)
                     val orderMonth = cal.get(Calendar.MONTH) + 1
-                    if (orderYear == now.year && orderMonth == now.monthValue) {
+                    if (orderYear == now.get(Calendar.YEAR) && orderMonth == now.get(Calendar.MONTH) + 1 && !date.after(now.time)) {
                         return true
                     }
                 }

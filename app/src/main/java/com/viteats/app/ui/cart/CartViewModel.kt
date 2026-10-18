@@ -43,16 +43,17 @@ class CartViewModel(
         cartRepository.clearCart()
     }
 
-    fun checkout(pin: String) {
+    fun checkout(pin: String, budgetOverride: Boolean = false) {
+        if (_checkoutState.value is CheckoutState.Processing) return
+        _checkoutState.value = CheckoutState.Processing
         viewModelScope.launch {
-            _checkoutState.value = CheckoutState.Processing
             val items = cartItems.value
             if (items.isEmpty()) {
                 _checkoutState.value = CheckoutState.Error("Cart is empty.")
                 return@launch
             }
 
-            val result = orderRepository.checkoutOrder(items, pin)
+            val result = orderRepository.checkoutOrder(items, pin, budgetOverride)
             result.onSuccess { orderId ->
                 cartRepository.clearCart()
                 _checkoutState.value = CheckoutState.Success(orderId)
